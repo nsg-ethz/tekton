@@ -203,7 +203,7 @@ class ConnectedSyn(object):
         # Assign iface names between edges (if needed)
         self.network_graph.set_iface_names()
 
-        for src, dst in self.network_graph.edges_iter():
+        for src, dst in self.network_graph.edges():
             if not self.network_graph.is_router(src):
                 continue
             if not self.network_graph.is_router(dst):

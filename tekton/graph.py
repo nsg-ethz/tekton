@@ -53,24 +53,21 @@ class NetworkGraph(nx.DiGraph):
     """
     An extended version of networkx.DiGraph
     """
-    def add_node(self, n, attr_dict=None, **attr):
+    def add_node(self, n, **attr):
         """
         Add a single node n and update node attributes.
         Inherits networkx.DiGraph.add_node
         Just check that VERTEX_TYPE is defined.
         :param n: node name (str)
-        :param attr_dict: dict of attributes
         :param attr: dict of attributes
         :return: None
         """
         type_set = False
-        if attr_dict and VERTEX_TYPE in attr_dict:
-            type_set = True
         if attr and VERTEX_TYPE in attr:
             type_set = True
         if not type_set:
             raise ValueError('Cannot add directly nodes, must use add_router, add_peer etc..')
-        super(NetworkGraph, self).add_node(n, attr_dict, **attr)
+        super(NetworkGraph, self).add_node(n, **attr)
 
     def add_router(self, router):
         """
@@ -88,7 +85,7 @@ class NetworkGraph(nx.DiGraph):
         :param router: the name of the router
         :return: None
         """
-        self.add_node(router, {VERTEX_TYPE: VERTEXTYPE.PEER})
+        self.add_node(router, **{VERTEX_TYPE: VERTEXTYPE.PEER})
 
     def add_network(self, network):
         """
@@ -97,7 +94,7 @@ class NetworkGraph(nx.DiGraph):
         :param router: the name of the router
         :return: None
         """
-        self.add_node(network, {VERTEX_TYPE: VERTEXTYPE.NETWORK})
+        self.add_node(network, **{VERTEX_TYPE: VERTEXTYPE.NETWORK})
 
     def is_peer(self, node):
         """
@@ -154,43 +151,37 @@ class NetworkGraph(nx.DiGraph):
             if self.is_network(node):
                 yield node
 
-    def add_edge(self, u, v, attr_dict=None, **attr):
+    def add_edge(self, u, v, **attr):
         """
         Add an edge u,v to G.
         Inherits networkx.DiGraph.add_Edge
         Just check that EDGE_TYPE is defined.
         :param u:
         :param v:
-        :param attr_dict:
         :param attr:
         :return:
         """
         type_set = False
-        if attr_dict and EDGE_TYPE in attr_dict:
-            type_set = True
         if attr and EDGE_TYPE in attr:
             type_set = True
         if not type_set:
             msg = 'Cannot add directly edges, must use ' \
                   'add_router_edge, add_peer_edge etc..'
             raise ValueError(msg)
-        super(NetworkGraph, self).add_edge(u, v, attr_dict, **attr)
+        super(NetworkGraph, self).add_edge(u, v, **attr)
 
-    def add_router_edge(self, u, v, attr_dict=None, **attr):
+    def add_router_edge(self, u, v, **attr):
         """
         Add an edge between two routers
         :param u: source router
         :param v: dst routers
-        :param attr_dict: attributes
         :param attr: attributes
         :return: None
         """
         assert self.is_local_router(u), "Source '%s' is not a router" % u
         assert self.is_local_router(u), "Destination '%s' is not a router" % u
-        if attr_dict is None:
-            attr_dict = {}
-        attr_dict[EDGE_TYPE] = EDGETYPE.ROUTER
-        self.add_edge(u, v, attr_dict, **attr)
+        attr[EDGE_TYPE] = EDGETYPE.ROUTER
+        self.add_edge(u, v,  **attr)
 
     def is_local_router_edge(self, src, dst):
         """Return True if the two local routers are connected"""
@@ -198,12 +189,11 @@ class NetworkGraph(nx.DiGraph):
             return False
         return self[src][dst][EDGE_TYPE] == EDGETYPE.ROUTER
 
-    def add_peer_edge(self, u, v, attr_dict=None, **attr):
+    def add_peer_edge(self, u, v, **attr):
         """
         Add an edge between two routers (one local and the other is a peer)
         :param u: source router
         :param v: dst routers
-        :param attr_dict: attributes
         :param attr: attributes
         :return: None
         """
@@ -211,17 +201,14 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_peer(u) or self.is_peer(v), err1
         err2 = "One side is not a local router (%s, %s)" % (u, v)
         assert self.is_router(u) or self.is_router(v), err2
-        if attr_dict is None:
-            attr_dict = {}
-        attr_dict[EDGE_TYPE] = EDGETYPE.PEER
-        self.add_edge(u, v, attr_dict, **attr)
+        attr[EDGE_TYPE] = EDGETYPE.PEER
+        self.add_edge(u, v, **attr)
 
-    def add_network_edge(self, u, v, attr_dict=None, **attr):
+    def add_network_edge(self, u, v, **attr):
         """
         Add an edge between a router and a network
         :param u: source router or network
         :param v: dst routers r network
-        :param attr_dict: attributes
         :param attr: attributes
         :return: None
         """
@@ -229,10 +216,8 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_router(u) or self.is_router(v), err1
         err2 = "One side is not a network (%s, %s)" % (u, v)
         assert self.is_network(u) or self.is_network(v), err2
-        if attr_dict is None:
-            attr_dict = {}
-        attr_dict[EDGE_TYPE] = EDGETYPE.NETWORK
-        self.add_edge(u, v, attr_dict, **attr)
+        attr[EDGE_TYPE] = EDGETYPE.NETWORK
+        self.add_edge(u, v, **attr)
 
     def get_loopback_interfaces(self, node):
         """
