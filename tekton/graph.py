@@ -521,7 +521,7 @@ class NetworkGraph(nx.DiGraph):
     def set_bgp_neighbor_iface(self, node, neighbor, iface):
         """Set the interface to which the peering session to be established"""
         neighbors = self.get_bgp_neighbors(node)
-        assert neighbor in neighbors
+        assert neighbor in neighbors, neighbors.keys()
         assert iface in self.get_ifaces(neighbor) or iface in self.get_loopback_interfaces(neighbor)
         neighbors[neighbor]['peering_iface'] = iface
 
