@@ -111,7 +111,7 @@ class CiscoConfigGen(object):
         config += "ip as-path access %s %s ^%s$\n" % (name, access, '_'.join([str(t) for t in as_path[1:]]))
         return config
 
-    def gen_iface_config(self, iface_name, addr, description=None, isloop=False, ospf_cost=None):
+    def gen_iface_config(self, router, iface_name, addr, description=None, isloop=False, ospf_cost=None):
         """
         Generate configuration for a given interface
         :param iface_name: the name of the interface, e.graph. Fa0/0 or lo0
@@ -119,7 +119,7 @@ class CiscoConfigGen(object):
         :param description: optional text description
         :return: string config
         """
-        err = "Not valid address {} for iface {}".format(addr, iface_name)
+        err = "Not valid address {} for iface {}:{}".format(addr, router, iface_name)
         assert isinstance(addr, (IPv4Interface, IPv6Interface)), err
         config = ''
         config += 'interface %s\n' % iface_name
@@ -150,13 +150,13 @@ class CiscoConfigGen(object):
                 ospf_cost = self.g.get_edge_ospf_cost(node, neighbor)
             else:
                 ospf_cost = None
-            config += self.gen_iface_config(iface, addr, desc, False, ospf_cost)
+            config += self.gen_iface_config(node, iface, addr, desc, False, ospf_cost)
 
         # Loop back interface
         for lo in sorted(self.g.get_loopback_interfaces(node)):
             addr = self.g.get_loopback_addr(node, lo)
             desc = self.g.get_loopback_description(node, lo)
-            config += self.gen_iface_config(lo, addr, desc, True, None)
+            config += self.gen_iface_config(node, lo, addr, desc, True, None)
         return config
 
     def gen_all_communities_lists(self, node):
@@ -432,6 +432,7 @@ class CiscoConfigGen(object):
                 network = self.g.get_loopback_addr(node, network).network
             elif network in self.g.get_ifaces(node):
                 network = self.g.get_iface_addr(node, network).network
+            assert isinstance(network, (IPv4Network, IPv6Network)), "Not valid network %s" % network
             config += " network %s %s area %s\n" % (network.network_address, network.hostmask, area)
         config += "!\n"
         return config
