@@ -342,7 +342,6 @@ class CiscoConfigGen(object):
             config += " neighbor %s send-community\n" % neighboraddr.ip
             import_map = self.g.get_bgp_import_route_map(node, neighbor)
             export_map = self.g.get_bgp_export_route_map(node, neighbor)
-            assert not export_map, export_map
             if import_map:
                 config += " neighbor %s route-map %s in\n" % (neighboraddr.ip, import_map)
             if export_map:
