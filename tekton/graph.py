@@ -788,6 +788,21 @@ class NetworkGraph(nx.DiGraph):
 
         return graph
 
+    def get_simplified_graph(self):
+        """
+        A slightly more information rich representaiton of the graph
+        than the print graph. This representation also contains the interfaces
+        :return: networkx.DiGraph
+        """
+        graph = self.get_print_graph()
+        for node, attrs in self.nodes(data=True):
+            graph.node[node]['ifaces'] = self.get_ifaces(node)
+            graph.node[node]['dyn'] = self.node[node]['dyn']
+            graph.node[node]['loopbacks'] = self.node[node]['loopbacks']
+        for src, dst, attrs in self.edges(data=True):
+            graph[src][dst]['iface'] = self.get_edge_iface(src, dst)
+        return graph
+
     def write_dot(self, out_file):
         """Write .dot file"""
         from networkx.drawing.nx_agraph import write_dot
