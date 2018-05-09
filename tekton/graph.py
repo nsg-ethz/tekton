@@ -780,7 +780,7 @@ class NetworkGraph(nx.DiGraph):
             graph.node[node]['label'] = label
             graph.node[node][VERTEX_TYPE] = vtype
 
-        for src, dst, attrs in self.edges_iter(data=True):
+        for src, dst, attrs in self.edges(data=True):
             etype = str(attrs[EDGE_TYPE])
             graph.add_edge(src, dst)
             graph[src][dst]['label'] = etype.split('.')[-1]
@@ -808,7 +808,7 @@ class NetworkGraph(nx.DiGraph):
             else:
                 out += '  <node internal="%s" name="%s"></node>\n' % (internal, node)
         seen = []
-        for src, dst in self.edges_iter():
+        for src, dst in self.edges():
             if (src, dst) in seen:
                 continue
             out += '  <edge source="%s" target="%s"></edge>\n' % (src, dst)
