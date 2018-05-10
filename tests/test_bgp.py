@@ -2,7 +2,6 @@ import unittest
 
 
 from tekton.bgp import *
-from tekton.utils import is_empty
 from tekton.utils import VALUENOTSET
 
 from ipaddress import ip_network

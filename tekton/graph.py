@@ -54,6 +54,7 @@ class NetworkGraph(nx.DiGraph):
     """
     An extended version of networkx.DiGraph
     """
+
     def __init__(self, graph=None):
         assert not graph or isinstance(graph, nx.DiGraph)
         super(NetworkGraph, self).__init__(graph)

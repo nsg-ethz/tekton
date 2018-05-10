@@ -6,13 +6,8 @@ import itertools
 import os
 import shutil
 
-from ipaddress import ip_address
-from ipaddress import ip_interface
-from ipaddress import ip_network
-
 from tekton.cisco import CiscoConfigGen
 from tekton.graph import NetworkGraph
-from tekton.utils import is_empty
 
 
 __author__ = "Ahmed El-Hassany"

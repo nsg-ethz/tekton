@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import tempfile
 import unittest
 
 from nose.plugins.attrib import attr

@@ -907,9 +907,9 @@ class RouteMapLine(object):
         access = getattr(other, 'access', None)
         lineno = getattr(other, 'lineno', None)
         return self.matches == matches and \
-               self.actions == actions and \
-               self.access == access and \
-               self.lineno == lineno
+            self.actions == actions and \
+            self.access == access and \
+            self.lineno == lineno
 
     def __str__(self):
         return "lineno: %d\n\taccess: %s, \n\tMatches: \n\t\t%s, \n\tActions: \n\t\t%s>" \
