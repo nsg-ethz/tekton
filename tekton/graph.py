@@ -53,6 +53,10 @@ class NetworkGraph(nx.DiGraph):
     """
     An extended version of networkx.DiGraph
     """
+    def __init__(self, graph=None):
+        assert not graph or isinstance(graph, nx.DiGraph)
+        super(NetworkGraph, self).__init__(graph)
+
     def add_node(self, n, **attr):
         """
         Add a single node n and update node attributes.
