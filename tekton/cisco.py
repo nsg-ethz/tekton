@@ -39,6 +39,7 @@ __email__ = "a.hassany@gmail.com"
 
 class CiscoConfigGen(object):
     """Generate Cisco specific configurations"""
+
     def __init__(self, g, prefix_map=None):
         assert isinstance(g, NetworkGraph)
         self.g = g
@@ -246,7 +247,7 @@ class CiscoConfigGen(object):
         elif isinstance(action, ActionSetCommunity):
             comms = ' '.join([c.value for c in action.communities])
             config += 'set community %s' % comms
-            if action.additive == True:
+            if action.additive:
                 config += ' additive'
         elif isinstance(action, ActionASPathPrepend):
             config += 'set as-path prepend %s' % ' '.join([str(x) for x in action.value])
@@ -483,7 +484,7 @@ class CiscoConfigGen(object):
                     "ip forward-protocol nd",
                     "no ip http server",
                     "no ip http secure-server",
-                    "ip bgp-community new-format",]
+                    "ip bgp-community new-format"]
         end = ['!', '!', 'control-plane', '!', '!', 'line con 0', ' stopbits 1',
                'line aux 0', ' stopbits 1', 'line vty 0 4', ' login', '!', 'end']
 

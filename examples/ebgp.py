@@ -9,7 +9,6 @@ from ipaddress import ip_network
 from tekton.connected import ConnectedSyn
 from tekton.gns3 import GNS3Topo
 from tekton.graph import NetworkGraph
-from tekton.utils import VALUENOTSET
 
 __author__ = "Ahmed El-Hassany"
 __email__ = "a.hassany@gmail.com"

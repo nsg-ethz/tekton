@@ -39,7 +39,7 @@ def ospf_net():
     graph.set_iface_names()
     # Add networks
     for router in graph.routers_iter():
-       for iface in graph.get_ifaces(router):
+        for iface in graph.get_ifaces(router):
             graph.add_ospf_network(router, iface, 0)
     # Set the edge costs
     graph.set_edge_ospf_cost(r1, r2, 100)
@@ -59,6 +59,7 @@ def ospf_net():
     tmpdir = tempfile.mkdtemp(suffix='-ospf')
     gns3.write_configs(tmpdir)
     print "Wrote configurations to %s" % tmpdir
+
 
 if __name__ == '__main__':
     ospf_net()
