@@ -474,7 +474,7 @@ class NetworkGraph(nx.DiGraph):
 
     def set_bgp_asnum(self, node, asnum):
         """Sets the AS number of a given router"""
-        assert is_empty(asnum) or isinstance(asnum, int)
+        assert isinstance(asnum, int)
         self.get_bgp_attrs(node)['asnum'] = asnum
 
     def is_bgp_enabled(self, node):
