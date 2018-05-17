@@ -13,6 +13,7 @@ from tekton.bgp import CommunityList
 from tekton.bgp import RouteMap
 from tekton.bgp import IpPrefixList
 from tekton.utils import is_empty
+from tekton.utils import is_symbolic
 from tekton.utils import VALUENOTSET
 
 
@@ -492,7 +493,7 @@ class NetworkGraph(nx.DiGraph):
     def set_bgp_router_id(self, node, router_id):
         """Sets the BGP router ID of a given router"""
         assert self.is_bgp_enabled(node)
-        if not is_empty(router_id):
+        if not is_empty(router_id) and not is_symbolic(router_id):
             assert isinstance(router_id, (int, ipaddress.IPv4Address))
         self.get_bgp_attrs(node)['router_id'] = router_id
 

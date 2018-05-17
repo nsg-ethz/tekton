@@ -30,6 +30,7 @@ from tekton.bgp import MatchNextHop
 from tekton.bgp import IpPrefixList
 
 from tekton.utils import is_empty
+from tekton.utils import is_symbolic
 
 
 __author__ = "Ahmed El-Hassany"
@@ -295,8 +296,9 @@ class CiscoConfigGen(object):
         config += ' no synchronization\n'
         config += ' bgp log-neighbor-changes\n'
         router_id = self.g.get_bgp_router_id(node)
-        if router_id:
-            assert not is_empty(router_id), "Router ID was not synthesized"
+        if router_id and not is_empty(router_id):
+            if is_symbolic(router_id):
+                router_id = router_id.get_value()
             config += ' bgp router-id {}'.format(ip_address(router_id))
         #config += ' bgp additional-paths send receive\n'
         announcements = self.g.get_bgp_announces(node)
