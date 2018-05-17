@@ -489,6 +489,19 @@ class NetworkGraph(nx.DiGraph):
         """Get a dictionary of BGP peers"""
         return self.get_bgp_attrs(node).get('neighbors', None)
 
+    def set_bgp_router_id(self, node, router_id):
+        """Sets the BGP router ID of a given router"""
+        assert self.is_bgp_enabled(node)
+        if not is_empty(router_id):
+            assert isinstance(router_id, (int, ipaddress.IPv4Address))
+        self.get_bgp_attrs(node)['router_id'] = router_id
+
+    def get_bgp_router_id(self, node):
+        """Get the BGP router ID of a given router"""
+        # TODO: Also read the interface addresses in case no explict ID set
+        assert self.is_bgp_enabled(node)
+        return self.get_bgp_attrs(node).get('router_id', None)
+
     def add_bgp_neighbor(self, router_a, router_b, router_a_iface=None, router_b_iface=None, description=None):
         """
         Add BGP peer

@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 from nose.plugins.attrib import attr
+import ipaddress
 
 from tekton.utils import VALUENOTSET
 
@@ -119,3 +120,26 @@ class TestNetworkGraph(unittest.TestCase):
         # Assert
         self.assertEqual(list(g.edges()), [(router1, router2)])
         self.assertEqual(g[router1][router2][EDGE_TYPE], EDGETYPE.PEER)
+
+    def test_router_id(self):
+        # Arrange
+        graph = NetworkGraph()
+        router1 = 'R1'
+        graph.add_router(router1)
+        graph.set_bgp_asnum(router1, 100)
+        value1 = VALUENOTSET
+        value2 = 123
+        value3 = ipaddress.IPv4Address(u'1.1.1.1')
+        # Act
+        rid0 = graph.get_bgp_router_id(router1)
+        graph.set_bgp_router_id(router1, value1)
+        rid1 = graph.get_bgp_router_id(router1)
+        graph.set_bgp_router_id(router1, value2)
+        rid2 = graph.get_bgp_router_id(router1)
+        graph.set_bgp_router_id(router1, value3)
+        rid3 = graph.get_bgp_router_id(router1)
+        # Assert
+        self.assertIsNone(rid0)
+        self.assertEquals(value1, rid1)
+        self.assertEquals(value2, rid2)
+        self.assertEquals(value3, rid3)
