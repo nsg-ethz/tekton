@@ -496,6 +496,8 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_bgp_enabled(node)
         if not is_empty(router_id) and not is_symbolic(router_id):
             assert isinstance(router_id, (int, ipaddress.IPv4Address))
+            if isinstance(router_id, int):
+                assert router_id > 0
         self.get_bgp_attrs(node)['router_id'] = router_id
 
     def get_bgp_router_id(self, node):
