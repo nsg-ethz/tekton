@@ -333,8 +333,9 @@ class CiscoConfigGen(object):
                 neighboraddr = self.g.get_loopback_addr(neighbor, iface)
             else:
                 neighboraddr = self.g.get_iface_addr(neighbor, iface)
-            assert neighbhor_asn is not None, 'AS Num is not set for %s' % neighbor
-            assert neighboraddr is not None
+            assert neighbhor_asn is not None, 'AS number is not set for %s' % neighbor
+            err = "BGP Peer address of {} is not set: {}.{}".format(node, neighbor, iface)
+            assert neighboraddr is not None and not is_empty(neighboraddr), err
             # Check if the neighbor is peering with the loopback of this node
             source_iface = self.g.get_bgp_neighbor_iface(node, neighbor)
             update_source = source_iface in self.g.get_loopback_interfaces(node)
