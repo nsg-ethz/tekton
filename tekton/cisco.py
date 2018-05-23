@@ -300,7 +300,7 @@ class CiscoConfigGen(object):
         if router_id and not is_empty(router_id):
             if is_symbolic(router_id):
                 router_id = router_id.get_value()
-            config += ' bgp router-id {}'.format(ip_address(router_id))
+            config += ' bgp router-id {}\n'.format(ip_address(router_id))
         #config += ' bgp additional-paths send receive\n'
         announcements = self.g.get_bgp_announces(node)
         for ann in announcements:
