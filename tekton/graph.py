@@ -415,7 +415,8 @@ class NetworkGraph(nx.DiGraph):
         :param process_id: integer
         :return: None
         """
-        assert self.is_local_router(node)
+        err = "Cannot enable OSPF on router {}".format(node)
+        assert self.is_local_router(node), err
         self.node[node]['ospf'] = dict(process_id=process_id, networks={})
 
     def get_ospf_process_id(self, node):
