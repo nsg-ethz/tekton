@@ -50,6 +50,16 @@ class EDGETYPE(enum.Enum):
     PEER = 'PEER_EDGE'
 
 
+class OSPFNetworkType(enum.Enum):
+    """
+    The network type for ospf interfaces
+    """
+    broadcast = 'broadcast'  # Specify OSPF broadcast multi-access network
+    non_broadcast = 'non-broadcast'  # Specify OSPF NBMA network
+    point_to_multipoint = 'point-to-multipoint'  # Specify OSPF point-to-multipoint network
+    point_to_point = 'point-to-point'  # Specify OSPF point-to-point network
+
+
 class NetworkGraph(nx.DiGraph):
     """
     An extended version of networkx.DiGraph
@@ -410,7 +420,8 @@ class NetworkGraph(nx.DiGraph):
 
     def get_ospf_process_id(self, node):
         """Return the OSPF process ID"""
-        assert self.is_ospf_enabled(node)
+        err1 = "OSPF is not enabled on router: {}".format(node)
+        assert self.is_ospf_enabled(node), err1
         return self.node[node]['ospf']['process_id']
 
     def is_ospf_enabled(self, node):
@@ -450,8 +461,10 @@ class NetworkGraph(nx.DiGraph):
         :param cost: int or VALUENOTSET
         :return: None
         """
-        assert self.is_ospf_enabled(src)
-        assert self.is_ospf_enabled(dst)
+        err1 = "OSPF is not enabled on router: {}".format(src)
+        err2 = "OSPF is not enabled on router: {}".format(dst)
+        assert self.is_ospf_enabled(src), err1
+        assert self.is_ospf_enabled(dst), err2
         self[src][dst]['ospf_cost'] = cost
 
     def get_edge_ospf_cost(self, src, dst):
@@ -461,9 +474,46 @@ class NetworkGraph(nx.DiGraph):
         :param dst: OSPF enabled local router
         :return: None, VALUENOTSET, int
         """
-        assert self.is_ospf_enabled(src)
-        assert self.is_ospf_enabled(dst)
+        err1 = "OSPF is not enabled on router: {}".format(src)
+        err2 = "OSPF is not enabled on router: {}".format(dst)
+        assert self.is_ospf_enabled(src), err1
+        assert self.is_ospf_enabled(dst), err2
         return self[src][dst].get('ospf_cost', None)
+
+    def set_ospf_interface_network_type(self, node, iface, network_type):
+        """
+        Set the OSPF Network type of the given interface
+        See OSPFNetworkType
+        """
+        err1 = "OSPF is not enabled on router: {}".format(node)
+        assert self.is_ospf_enabled(node), err1
+        is_iface = iface in self.get_ifaces(node)
+        is_loop = iface in self.get_loopback_interfaces(node)
+        err2 = "Interface doesn't exist: {}:{}".format(node, iface)
+        assert is_iface or is_loop, err2
+        assert isinstance(network_type, OSPFNetworkType)
+        if is_iface:
+            ifaces = self.get_ifaces(node)
+        else:
+            ifaces = self.get_loopback_interfaces(node)
+        ifaces[iface]['network_type'] = network_type
+
+    def get_ospf_interface_network_type(self, node, iface):
+        """
+        Get the OSPF Network type of the given interface
+        See OSPFNetworkType
+        """
+        err1 = "OSPF is not enabled on router: {}".format(node)
+        assert self.is_ospf_enabled(node), err1
+        is_iface = iface in self.get_ifaces(node)
+        is_loop = iface in self.get_loopback_interfaces(node)
+        err2 = "Interface doesn't exist: {}:{}".format(node, iface)
+        assert is_iface or is_loop, err2
+        if is_iface:
+            ifaces = self.get_ifaces(node)
+        else:
+            ifaces = self.get_loopback_interfaces(node)
+        return ifaces[iface].get('network_type', None)
 
     def get_bgp_attrs(self, node):
         """Return a dict of all BGP related attrs given to a node"""

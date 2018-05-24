@@ -128,6 +128,9 @@ class CiscoConfigGen(object):
         config += " ip address %s %s\n" % (addr.ip, addr.netmask)
         if ospf_cost:
             config += " ip ospf cost %d\n" % ospf_cost
+            network_type = self.g.get_ospf_interface_network_type(router, iface_name)
+            if network_type:
+                config += " ip ospf network {}\n".format(network_type.value)
         if description:
             config += ' description "{}"\n'.format(description)
         if not isloop:
