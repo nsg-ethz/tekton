@@ -405,26 +405,32 @@ class CiscoConfigGen(object):
         ifaces = []
         lines = []
         lineno = 5
-        for ann in self.g.get_bgp_advertise(node):
-            net = self.prefix_lookup(ann.prefix)
-            addr = ip_interface(u"%s/%d" % (net.hosts().next(), net.prefixlen))
-            iface = "lo%s" % next_lo
-            desc = "For %s" % ann.prefix
-            self.g.set_loopback_addr(node, iface, addr)
-            self.g.set_loopback_description(node, iface, desc)
-
-            iplist = IpPrefixList(name="L_%s" % next_lo, access=Access.permit, networks=[net])
-            self.g.add_ip_prefix_list(node, iplist)
-            match = MatchIpPrefixListList(iplist)
-            action = ActionASPathPrepend(ann.as_path)
-            line = RouteMapLine(matches=[match],
-                                actions=[action],
-                                access=Access.permit,
-                                lineno=lineno)
-            self.g.add_bgp_announces(node, iface)
-            lines.append(line)
-            ifaces.append(iface)
-            lineno += 5
+        for ann, attrs in self.g.get_bgp_advertise(node).iteritems():
+            iface = attrs.get('loopback')
+            if not iface:
+                net = self.prefix_lookup(ann.prefix)
+                addr = ip_interface(u"%s/%d" % (net.hosts().next(), net.prefixlen))
+                iface = "lo%s" % next_lo
+                desc = "For %s" % ann.prefix
+                self.g.set_loopback_addr(node, iface, addr)
+                self.g.set_loopback_description(node, iface, desc)
+            else:
+                addr = self.g.get_loopback_addr(node, iface)
+                net = addr.network
+            # Prepend AS Path
+            if ann.as_path:
+                iplist = IpPrefixList(name="L_%s" % next_lo, access=Access.permit, networks=[net])
+                self.g.add_ip_prefix_list(node, iplist)
+                match = MatchIpPrefixListList(iplist)
+                action = ActionASPathPrepend(ann.as_path)
+                line = RouteMapLine(matches=[match],
+                                    actions=[action],
+                                    access=Access.permit,
+                                    lineno=lineno)
+                self.g.add_bgp_announces(node, iface)
+                lines.append(line)
+                ifaces.append(iface)
+                lineno += 5
             next_lo += 1
         if lines:
             rmap = RouteMap(name="Export_%s" % node, lines=lines)

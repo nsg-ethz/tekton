@@ -634,14 +634,14 @@ class NetworkGraph(nx.DiGraph):
         name = 'advertise'
         attrs = self.get_bgp_attrs(node)
         if name not in attrs:
-            attrs['advertise'] = []
+            attrs['advertise'] = {}
         return attrs['advertise']
 
-    def add_bgp_advertise(self, node, announcement):
+    def add_bgp_advertise(self, node, announcement, loopback=None):
         """
         Add an advertisement by an external peer
         """
-        self.get_bgp_advertise(node).append(announcement)
+        self.get_bgp_advertise(node)[announcement] = {'loopback': loopback}
 
     def get_bgp_announces(self, node):
         """
