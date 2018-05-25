@@ -630,7 +630,7 @@ class NetworkGraph(nx.DiGraph):
         :param node: router
         :return: list
         """
-        assert self.is_peer(node)
+        #assert self.is_peer(node)
         name = 'advertise'
         attrs = self.get_bgp_attrs(node)
         if name not in attrs:

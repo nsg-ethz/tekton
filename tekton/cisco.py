@@ -397,8 +397,11 @@ class CiscoConfigGen(object):
         return config
 
     def gen_external_announcements(self, node):
-        assert self.g.is_peer(node)
+        #assert self.g.is_peer(node)
+        # Find the next free loopback interface
         next_lo = 0
+        while "lo{}".format(next_lo) in self.g.get_loopback_interfaces(node):
+            next_lo += 1
         ifaces = []
         lines = []
         lineno = 5
@@ -407,7 +410,6 @@ class CiscoConfigGen(object):
             addr = ip_interface(u"%s/%d" % (net.hosts().next(), net.prefixlen))
             iface = "lo%s" % next_lo
             desc = "For %s" % ann.prefix
-
             self.g.set_loopback_addr(node, iface, addr)
             self.g.set_loopback_description(node, iface, desc)
 
@@ -473,8 +475,8 @@ class CiscoConfigGen(object):
         :return: configs string
         """
         assert self.g.is_router(node)
-        if self.g.is_peer(node):
-            self.gen_external_announcements(node)
+        #if self.g.is_peer(node):
+        self.gen_external_announcements(node)
 
         preamble = ["version 15.2",
                     "service timestamps debug datetime msec",
