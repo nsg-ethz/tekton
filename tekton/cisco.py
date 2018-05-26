@@ -418,11 +418,12 @@ class CiscoConfigGen(object):
                 addr = self.g.get_loopback_addr(node, iface)
                 net = addr.network
             # Prepend AS Path
-            if ann.as_path:
-                iplist = IpPrefixList(name="L_%s" % next_lo, access=Access.permit, networks=[net])
+            if ann.as_path and len(ann.as_path) > 1:
+                iplist = IpPrefixList(name="L_%s" % next_lo,
+                                      access=Access.permit, networks=[net])
                 self.g.add_ip_prefix_list(node, iplist)
                 match = MatchIpPrefixListList(iplist)
-                action = ActionASPathPrepend(ann.as_path)
+                action = ActionASPathPrepend(ann.as_path[:-1])
                 line = RouteMapLine(matches=[match],
                                     actions=[action],
                                     access=Access.permit,
@@ -433,6 +434,8 @@ class CiscoConfigGen(object):
                 lineno += 5
             next_lo += 1
         if lines:
+            allow = RouteMapLine(matches=None, actions=None, access=Access.permit, lineno=100)
+            lines.append(allow)
             rmap = RouteMap(name="Export_%s" % node, lines=lines)
             self.g.add_route_map(node, rmap)
             for neighbor in self.g.get_bgp_neighbors(node):
