@@ -9,6 +9,7 @@ from ipaddress import IPv4Network
 from ipaddress import IPv6Network
 
 from tekton.utils import is_empty
+from tekton.utils import is_symbolic
 from tekton.utils import VALUENOTSET
 
 __author__ = "Ahmed El-Hassany"
@@ -58,7 +59,10 @@ class Announcement(object):
         #        assert len(as_path) == as_path_len
         if prev_announcement:
             assert isinstance(prev_announcement, Announcement)
-
+        assert is_symbolic or not is_empty(as_path)
+        if not is_symbolic(as_path):
+            for asnum in as_path:
+                assert not is_empty(asnum)
         self.prefix = prefix
         self.peer = peer
         self.origin = origin
