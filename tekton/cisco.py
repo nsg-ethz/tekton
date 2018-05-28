@@ -417,6 +417,8 @@ class CiscoConfigGen(object):
             else:
                 addr = self.g.get_loopback_addr(node, iface)
                 net = addr.network
+            # Announce network
+            self.g.add_bgp_announces(node, iface)
             # Prepend AS Path
             if ann.as_path and len(ann.as_path) > 1:
                 iplist = IpPrefixList(name="L_%s" % next_lo,
@@ -428,7 +430,6 @@ class CiscoConfigGen(object):
                                     actions=[action],
                                     access=Access.permit,
                                     lineno=lineno)
-                self.g.add_bgp_announces(node, iface)
                 lines.append(line)
                 ifaces.append(iface)
                 lineno += 5
