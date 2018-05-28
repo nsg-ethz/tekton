@@ -332,6 +332,10 @@ class CiscoConfigGen(object):
                 continue
             neighbhor_asn = self.g.get_bgp_asnum(neighbor)
             iface = self.g.get_bgp_neighbor_iface(node, neighbor)
+            if is_empty(iface):
+                err = "Interface for BGP peering is not defined {}->{}:{}".\
+                    format(node, neighbor, iface)
+                assert not is_empty(iface), err
             if iface in self.g.get_loopback_interfaces(neighbor):
                 neighboraddr = self.g.get_loopback_addr(neighbor, iface)
             else:
