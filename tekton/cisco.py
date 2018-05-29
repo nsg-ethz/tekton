@@ -93,6 +93,7 @@ class CiscoConfigGen(object):
             lineno = (i + 1) * 10
             if network in self.prefix_map:
                 network = self.prefix_map[network]
+            network = ip_network(unicode(network))
             addr = str(getattr(network, 'network_address', network))
             prefixlen = getattr(network, 'prefixlen', 32)
             config += "ip prefix-list %s seq %d %s %s/%d\n" % (name, lineno,
