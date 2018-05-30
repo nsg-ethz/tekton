@@ -430,7 +430,7 @@ class CiscoConfigGen(object):
                                       access=Access.permit, networks=[net])
                 self.g.add_ip_prefix_list(node, iplist)
                 match = MatchIpPrefixListList(iplist)
-                action = ActionASPathPrepend(ann.as_path[:-1])
+                action = ActionASPathPrepend(ann.as_path)
                 line = RouteMapLine(matches=[match],
                                     actions=[action],
                                     access=Access.permit,
