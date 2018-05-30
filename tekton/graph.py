@@ -246,6 +246,12 @@ class NetworkGraph(nx.DiGraph):
             self.node[node]['loopbacks'] = {}
         return self.node[node]['loopbacks']
 
+    def is_loopback(self, node, iface):
+        """Return true if iface is defined as a loopback"""
+        err = "Node {} is not defined as router".format(node)
+        assert self.is_router(node), err
+        return iface in self.get_loopback_interfaces(node)
+
     def set_loopback_addr(self, node, loopback, addr):
         """
         Assigns an IP address to a loopback interface
@@ -312,6 +318,12 @@ class NetworkGraph(nx.DiGraph):
                               'addr': None,
                               'description': None}
 
+    def is_interface(self, node, iface):
+        """Return true if iface is defined as a physical interface"""
+        err = "Node {} is not defined as router".format(node)
+        assert self.is_router(node), err
+        return iface in self.get_ifaces(node)
+
     def set_iface_addr(self, node, iface_name, addr):
         """Return set the address of an interface or None"""
         assert self.is_router(node)
@@ -361,6 +373,16 @@ class NetworkGraph(nx.DiGraph):
         err = "Undefined iface '%s' in %s" % (iface_name, ifaces.keys())
         assert iface_name in ifaces, err
         ifaces[iface_name]['shutdown'] = is_shutdown
+
+    def get_interface_loop_addr(self, node, iface):
+        """Get the address of an interface or a loopback"""
+        if self.is_interface(node, iface):
+            return self.get_iface_addr(node, iface)
+        elif self.is_loopback(node, iface):
+            return self.get_loopback_addr(node, iface)
+        else:
+            raise ValueError("Not valid interface/loopback {} at router {}".
+                             format(node, iface))
 
     def set_edge_iface(self, src, dst, iface):
         """

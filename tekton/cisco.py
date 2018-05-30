@@ -235,7 +235,7 @@ class CiscoConfigGen(object):
             if parsed and self.g.has_node(parsed[0]):
                 router = parsed[0]
                 iface = '/'.join(parsed[1:])
-                next_hop = self.g.get_iface_addr(router, iface)
+                next_hop = self.g.get_interface_loop_addr(router, iface)
                 self.prefix_map[match.match] = next_hop
             if hasattr(next_hop, 'ip'):
                 next_hop = next_hop.ip
