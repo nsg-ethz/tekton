@@ -4,6 +4,7 @@ Extension of the networkx.DiGraph to allow easy synthesis
 and network specific annotations.
 """
 
+from itertools import count
 import ipaddress
 import enum
 import networkx as nx
@@ -68,6 +69,7 @@ class NetworkGraph(nx.DiGraph):
     def __init__(self, graph=None):
         assert not graph or isinstance(graph, nx.DiGraph)
         super(NetworkGraph, self).__init__(graph)
+        self._counter = count(1)
 
     def add_node(self, n, **attr):
         """
@@ -718,6 +720,12 @@ class NetworkGraph(nx.DiGraph):
         """
         assert isinstance(community_list, CommunityList)
         lists = self.get_bgp_communities_list(node)
+        if community_list.list_id is None:
+            list_id = None
+            while list_id is None or list_id in lists:
+                list_id = self._counter.next()
+            community_list._list_id = list_id
+
         assert community_list.list_id not in lists, "List exists %s" % community_list.list_id
         lists[community_list.list_id] = community_list
         return community_list
@@ -832,6 +840,14 @@ class NetworkGraph(nx.DiGraph):
         """Add new ip prefix list (overrides existing one with the same name"""
         assert isinstance(prefix_list, IpPrefixList)
         lists = self.get_ip_preflix_lists(node)
+        if not prefix_list.name:
+            name = None
+            while not name or name in lists:
+                name = 'ip_list_{}_{}'.format(node, self._counter.next())
+            prefix_list._name = name
+        err = "Prefix list with '{}' is already defined at router {}".format(
+            node, prefix_list.name)
+        assert prefix_list.name not in lists, err
         lists[prefix_list.name] = prefix_list
 
     def set_iface_names(self):

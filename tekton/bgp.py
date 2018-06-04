@@ -194,7 +194,7 @@ class CommunityList(object):
     """Represents a list of communities in a match"""
 
     def __init__(self, list_id, access, communities):
-        assert isinstance(list_id, int)
+        assert list_id is None or isinstance(list_id, int)
         assert isinstance(communities, (list, tuple))
         if not (isinstance(access, Access) and access == Access.permit):
             raise NotImplementedError('Only permit access is supported.')
@@ -537,6 +537,34 @@ class MatchSelectOne(Match):
     def match(self, value):
         raise ValueError("Match already set to %s" % str(self._match))
 
+    @staticmethod
+    def generate_symbolic(graph, router, num_comms=1, num_prefixes=1, match_types=None):
+        if not match_types:
+            match_types = [MatchNextHop,
+                           MatchIpPrefixListList,
+                           MatchCommunitiesList,
+                           MatchAsPath,]
+        matches = []
+        for match_cls in match_types:
+            if num_prefixes and match_cls == MatchIpPrefixListList:
+                iplist = IpPrefixList(
+                    name=None,
+                    access=Access.permit,
+                    networks=[VALUENOTSET for _ in range(num_prefixes)])
+                graph.add_ip_prefix_list(router, iplist)
+                match = MatchIpPrefixListList(iplist)
+            elif num_comms and match_cls == MatchCommunitiesList:
+                clist = CommunityList(
+                    list_id=None,
+                    access=Access.permit,
+                    communities=[VALUENOTSET for _ in range(num_comms)])
+                graph.add_bgp_community_list(router, clist)
+                match = MatchCommunitiesList(clist)
+            else:
+                match = match_cls(VALUENOTSET)
+            matches.append(match)
+        return MatchSelectOne(matches)
+
 
 class ActionPermitted(Action):
     def __init__(self, access):
@@ -813,6 +841,25 @@ class ActionSetOne(Action):
 
     def __repr__(self):
         return self.__str__()
+
+    @staticmethod
+    def generate_symbolic(graph, router, num_comms=1, comm_additiv=True, action_types=None):
+        if not action_types:
+            action_types = [ActionASPathPrepend,
+                            ActionSetNextHop,
+                            ActionSetCommunity,
+                            ActionSetLocalPref,
+                            ActionSetMED,]
+        actions = []
+        for action_cls in action_types:
+            if num_comms and action_cls == ActionSetCommunity:
+               action = ActionSetCommunity(
+                   communities=[VALUENOTSET for _ in range(num_comms)],
+                   additive=comm_additiv)
+            else:
+                action = action_cls(VALUENOTSET)
+            actions.append(action)
+        return ActionSetOne(actions)
 
 
 class ActionString(Action):

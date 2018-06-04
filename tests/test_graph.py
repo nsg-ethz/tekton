@@ -5,6 +5,10 @@ import unittest
 from nose.plugins.attrib import attr
 import ipaddress
 
+from tekton.bgp import Access
+from tekton.bgp import CommunityList
+from tekton.bgp import IpPrefixList
+
 from tekton.utils import VALUENOTSET
 
 from tekton.graph import EDGETYPE
@@ -142,3 +146,37 @@ class TestNetworkGraph(unittest.TestCase):
         self.assertEquals(value1, rid1)
         self.assertEquals(value2, rid2)
         self.assertEquals(value3, rid3)
+
+    def test_add_ip_list(self):
+        # Arrange
+        net = ipaddress.ip_network(u'128.0.0.0/24')
+        graph = NetworkGraph()
+        router1 = 'R1'
+        graph.add_router(router1)
+        named = IpPrefixList(name='L1', access=Access.permit, networks=[net])
+        dup = IpPrefixList(name='L1', access=Access.permit, networks=[net])
+        unamed = IpPrefixList(name=None, access=Access.permit, networks=[net])
+        # Act
+        graph.add_ip_prefix_list(router1, named)
+        graph.add_ip_prefix_list(router1, unamed)
+        # Assert
+        self.assertIn(named.name, graph.get_ip_preflix_lists(router1))
+        self.assertIsNotNone(unamed.name)
+        self.assertIn(unamed.name, graph.get_ip_preflix_lists(router1))
+
+    def test_add_community_list(self):
+        # Arrange
+        graph = NetworkGraph()
+        router1 = 'R1'
+        graph.add_router(router1)
+        named = CommunityList(list_id=1, access=Access.permit, communities=[VALUENOTSET])
+        dup = CommunityList(list_id=1, access=Access.permit, communities=[VALUENOTSET])
+        unamed = CommunityList(list_id=None, access=Access.permit, communities=[VALUENOTSET])
+        # Act
+        graph.add_bgp_community_list(router1, named)
+        graph.add_bgp_community_list(router1, unamed)
+        # Assert
+        self.assertIn(named.list_id, graph.get_bgp_communities_list(router1))
+        self.assertIsNotNone(unamed.list_id)
+        self.assertIn(unamed.list_id, graph.get_bgp_communities_list(router1))
+
