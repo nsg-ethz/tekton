@@ -242,7 +242,7 @@ class CiscoConfigGen(object):
                 next_hop = next_hop.ip
             config += 'match ip next-hop %s' % next_hop
         else:
-            raise ValueError('Unknow match type %s' % match)
+            raise ValueError('Unknown match type %s' % match)
         return config
 
     def gen_route_map_action(self, action):
