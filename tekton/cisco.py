@@ -19,6 +19,7 @@ from tekton.bgp import ActionSetCommunity
 from tekton.bgp import ActionSetLocalPref
 from tekton.bgp import ActionString
 from tekton.bgp import ActionASPathPrepend
+from tekton.bgp import ActionSetNextHop
 from tekton.bgp import ASPathList
 from tekton.bgp import CommunityList
 from tekton.bgp import RouteMap
@@ -253,12 +254,21 @@ class CiscoConfigGen(object):
             config += 'set community %s' % comms
             if action.additive:
                 config += ' additive'
+        elif isinstance(action, ActionSetNextHop):
+            if '-' in action.value:
+                router = action.value.split('-')[0]
+                iface = '/'.join(action.value.split('-')[1:])
+                addr = self.g.get_interface_loop_addr(router, iface)
+                ip = addr.ip
+            else:
+                ip = ip_address(action.value)
+            config += 'set next-hop {}'.format(str(ip))
         elif isinstance(action, ActionASPathPrepend):
             config += 'set as-path prepend %s' % ' '.join([str(x) for x in action.value])
         elif isinstance(action, ActionString):
             config = '%s' % action.value
         else:
-            raise ValueError('Unknow action type %s' % action)
+            raise ValueError('Unknown action type %s' % action)
         return config
 
     def gen_route_map(self, node, routemap):
