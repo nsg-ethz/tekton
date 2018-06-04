@@ -730,6 +730,11 @@ class NetworkGraph(nx.DiGraph):
         lists[community_list.list_id] = community_list
         return community_list
 
+    def del_community_list(self, node, community_list):
+        list_id = getattr(community_list, 'list_id', community_list)
+        lists = self.get_bgp_communities_list(node)
+        del lists[list_id]
+
     def get_as_path_list(self, node):
         """
         Return as paths list registered on the router
@@ -849,6 +854,10 @@ class NetworkGraph(nx.DiGraph):
             node, prefix_list.name)
         assert prefix_list.name not in lists, err
         lists[prefix_list.name] = prefix_list
+
+    def del_ip_prefix_list(self, node, prefix_list):
+        name = getattr(prefix_list, 'name', prefix_list)
+        del self.get_ip_preflix_lists(node)[name]
 
     def set_iface_names(self):
         """Assigns interface IDs (Fa0/0,  Fa0/1, etc..) for each edge"""
