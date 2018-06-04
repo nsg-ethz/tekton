@@ -843,19 +843,18 @@ class ActionSetOne(Action):
         return self.__str__()
 
     @staticmethod
-    def generate_symbolic(graph, router, num_comms=1, comm_additiv=True, action_types=None):
+    def generate_symbolic(graph, router, num_comms=1, comm_additive=True, action_types=None):
         if not action_types:
-            action_types = [ActionASPathPrepend,
-                            ActionSetNextHop,
+            action_types = [ActionSetNextHop,
                             ActionSetCommunity,
-                            ActionSetLocalPref,
-                            ActionSetMED,]
+                            ActionSetLocalPref]
         actions = []
         for action_cls in action_types:
             if num_comms and action_cls == ActionSetCommunity:
-               action = ActionSetCommunity(
-                   communities=[VALUENOTSET for _ in range(num_comms)],
-                   additive=comm_additiv)
+                action = ActionSetCommunity(
+                    communities=[VALUENOTSET for _ in range(num_comms)],
+                    additive=comm_additive)
+                actions.append(action)
             else:
                 action = action_cls(VALUENOTSET)
             actions.append(action)
@@ -970,6 +969,26 @@ class RouteMapLine(object):
         return "<lineno: %d, access: %s, Matches: %s, Actions: %s>" \
                % (self.lineno, self.access, self.matches, self.actions)
 
+    @staticmethod
+    def generate_symbolic(graph, router, lineno,
+                          matches_per_line=1, actions_per_line=1,
+                          num_match_prefixes=1, num_match_comms=1, num_set_comms=1,
+                          comm_additive=True,
+                          match_types=None,
+                          action_types=None):
+        matches = []
+        actions = []
+        for _ in range(matches_per_line):
+            match = MatchSelectOne.generate_symbolic(
+                graph=graph, router=router, num_comms=num_match_comms,
+                num_prefixes=num_match_prefixes, match_types=match_types)
+            matches.append(match)
+        for _ in range(actions_per_line):
+            action = ActionSetOne.generate_symbolic(
+                graph=graph, router=router, num_comms=num_set_comms,
+                comm_additive=comm_additive, action_types=action_types)
+            actions.append(action)
+        return RouteMapLine(matches=matches, actions=actions, access=VALUENOTSET, lineno=lineno)
 
 class RouteMap(object):
     """
@@ -1006,3 +1025,26 @@ class RouteMap(object):
 
     def __repr__(self):
         return self.__str__()
+
+    @staticmethod
+    def generate_symbolic(name, graph, router, num_lines=1,
+                          matches_per_line=1, actions_per_line=1,
+                          num_match_prefixes=1, num_match_comms=1, num_set_comms=1,
+                          comm_additive=True,
+                          match_types=None,
+                          action_types=None):
+
+        lines = []
+        for i in range(num_lines):
+            line = RouteMapLine.generate_symbolic(
+                graph=graph, router=router, lineno=i + 1,
+                matches_per_line=matches_per_line, actions_per_line=actions_per_line,
+                num_match_prefixes=num_match_prefixes, num_match_comms=num_match_comms,
+                num_set_comms=num_set_comms,
+                comm_additive=comm_additive,
+                match_types=match_types, action_types=action_types)
+            lines.append(line)
+        lines.append(RouteMapLine(matches=None, actions=None, access=Access.deny, lineno=i + 100))
+        rmap = RouteMap(name, lines)
+        graph.add_route_map(router, rmap)
+        return rmap
