@@ -463,7 +463,8 @@ class NetworkGraph(nx.DiGraph):
         :param node: local router
         :return: dict Network->Area
         """
-        assert self.is_ospf_enabled(node)
+        err1 = "OSPF is not enabled on router: {}".format(node)
+        assert self.is_ospf_enabled(node), err1
         return self.node[node]['ospf']['networks']
 
     def add_ospf_network(self, node, network, area):
