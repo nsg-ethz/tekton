@@ -852,7 +852,7 @@ class NetworkGraph(nx.DiGraph):
             prefix_list._name = name
         err = "Prefix list with '{}' is already defined at router {}".format(
             node, prefix_list.name)
-        assert prefix_list.name not in lists, err
+        #assert prefix_list.name not in lists, err
         lists[prefix_list.name] = prefix_list
 
     def del_ip_prefix_list(self, node, prefix_list):
