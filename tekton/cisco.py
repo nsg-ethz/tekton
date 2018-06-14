@@ -90,10 +90,8 @@ class CiscoConfigGen(object):
         for i, network in enumerate(networks):
             if is_empty(network):
                 continue
-            network = self.prefix_map.get(network, network)
+            network = self.prefix_lookup(network)
             lineno = (i + 1) * 10
-            if network in self.prefix_map:
-                network = self.prefix_map[network]
             network = ip_network(unicode(network))
             addr = str(getattr(network, 'network_address', network))
             prefixlen = getattr(network, 'prefixlen', 32)
