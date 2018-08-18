@@ -48,6 +48,7 @@ class CiscoConfigGen(object):
         self.nettype = (IPv4Network, IPv6Network)
         self._next_announced_prefix = int(ip_address(u'128.0.0.0'))
         self._next_as_paths = {}
+        self._empty_community_lists = {}
         for node in self.g.routers_iter():
             self._next_as_paths[node] = itertools.count(1)
 
@@ -62,7 +63,7 @@ class CiscoConfigGen(object):
         self.prefix_map[prefix] = net
         return net
 
-    def gen_community_list(self, community_list):
+    def gen_community_list(self, node, community_list):
         """
         Generate config lines for community list
         :param community_list:
@@ -72,8 +73,13 @@ class CiscoConfigGen(object):
         config = ''
         list_id = community_list.list_id
         access = community_list.access.value
-        communities = ' '.join([c.value for c in community_list.communities if not is_empty(c)])
-        config += "ip community-list %d %s %s\n" % (list_id, access, communities)
+        communities = [c.value for c in community_list.communities if not is_empty(c)]
+        if communities:
+            config += "ip community-list %d %s %s\n" % (list_id, access, ' '.join(communities))
+        else:
+            if node not in self._empty_community_lists:
+                self._empty_community_lists[node] = []
+            self._empty_community_lists[node].append(list_id)
         return config
 
     def gen_ip_prefix_list(self, node, prefix_list):
@@ -174,7 +180,7 @@ class CiscoConfigGen(object):
         comm_lists = self.g.get_bgp_communities_list(node)
         for num in comm_lists:
             comm_list = comm_lists[num]
-            config += self.gen_community_list(comm_list)
+            config += self.gen_community_list(node, comm_list)
             config += "!\n"
         config += "!\n"
         return config
@@ -210,6 +216,9 @@ class CiscoConfigGen(object):
     def gen_route_map_match(self, node, match):
         config = ''
         if isinstance(match, MatchCommunitiesList):
+            if match.match.list_id in self._empty_community_lists.get(node, []):
+                err = "Community list id {} is used in a match but it's empty".format(match.match.list_id)
+                assert False, err
             config += 'match community %d' % match.match.list_id
         elif isinstance(match, MatchIpPrefixListList):
             name = match.match.name
