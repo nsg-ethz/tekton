@@ -239,7 +239,12 @@ class CiscoConfigGen(object):
             config += 'match as-path %s' % list_no
         elif isinstance(match, MatchNextHop):
             next_hop = match.match
-            parsed = next_hop.split('-') if isinstance(next_hop, basestring) else None
+            parsed = None
+            if isinstance(next_hop, basestring):
+                if '__DASH__' in next_hop:
+                    parsed = next_hop.split('_DASH_')
+                else:
+                    parsed = next_hop.split('-')
             if parsed and self.g.has_node(parsed[0]):
                 router = parsed[0]
                 iface = '/'.join(parsed[1:])
