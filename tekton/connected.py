@@ -78,7 +78,7 @@ class ConnectedSyn(object):
         """Get the next subnet to be assigned to interfaces"""
         family = 32 if isinstance(net, IPv4Network) else 128
         base = int(net.network_address)
-        next_addr = ip_address(base + ((family - net.prefixlen) ** 2) + 1)
+        next_addr = ip_address(base + (2 ** (family - net.prefixlen)))
         next_net = ip_network(u'%s/%d' % (next_addr, net.prefixlen))
         return next_net
 

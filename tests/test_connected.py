@@ -2,6 +2,7 @@
 import unittest
 
 from ipaddress import ip_interface
+from ipaddress import ip_network
 
 from tekton.connected import ConnectedSyn
 from tekton.connected import DuplicateAddressError
@@ -202,3 +203,15 @@ class ConnectedTest(unittest.TestCase):
         ret = syn.synthesize()
         # Asserts
         self.assertTrue(ret)
+
+    def test_get_next_net(self):
+        # get some dummy graph
+        graph = self.get_two_nodes()
+
+        syn = ConnectedSyn(graph)
+
+        net = ip_network(u'10.0.0.0/24')
+
+        for i in range(1, 24):
+            net = syn.get_next_net(net)
+            self.assertEqual(net, ip_network(u'10.0.{}.0/24'.format(i)))
