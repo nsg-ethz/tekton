@@ -15,6 +15,11 @@ setup(name='Tekton',
     url='https://synet.etzh.ch',
     license = "Apache",
     packages=['tekton'],
+    install_requires=[
+        'ipaddress',
+        'enum34',
+        'networkx>=2.2',
+    ],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
