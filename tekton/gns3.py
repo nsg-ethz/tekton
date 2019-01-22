@@ -83,7 +83,7 @@ class GNS3Topo(object):
             self.graph.node[node]['dyn'] = {}
         dyn = self.graph.node[node]['dyn']
         dyn['model'] = self.gns3_config.router_model
-        dyn['console'] = self.next_console.next()
+        dyn['console'] = next(self.next_console)
         dyn['cnfg'] = "configs/%s.cfg" % node
 
     def get_gns3_topo(self):
@@ -97,12 +97,12 @@ class GNS3Topo(object):
         topo += "\tudp = 15000"
         topo += "\n"
         topo += "\t[[ %s ]]\n" % self.gns3_config.router_model
-        for key, value in self.router_info.iteritems():
+        for key, value in self.router_info.items():
             topo += "\t\t%s = %s\n" % (key, value)
         for node in sorted(list(self.graph.routers_iter())):
             topo += "\t[[ ROUTER %s ]]\n" % node
             self._annotate_node(node)
-            for key, value in self.graph.node[node]['dyn'].iteritems():
+            for key, value in self.graph.node[node]['dyn'].items():
                 topo += "\t\t%s = %s\n" % (key, value)
             for neighbor in self.graph.neighbors(node):
                 siface = self.graph.get_edge_iface(node, neighbor)

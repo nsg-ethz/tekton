@@ -1,5 +1,6 @@
 ipaddress
 enum34
+future
 networkx>=2.2
 nose
 nose-timer

@@ -12,6 +12,7 @@ from ipaddress import IPv6Network
 from ipaddress import ip_network
 from ipaddress import ip_address
 from ipaddress import ip_interface
+from past.builtins import basestring
 
 from tekton.graph import NetworkGraph
 from tekton.bgp import Access
@@ -233,7 +234,7 @@ class CiscoConfigGen(object):
                 if tmp.as_paths == match.match:
                     list_no = tmp.list_id
             if not list_no:
-                list_no = self._next_as_paths[node].next()
+                list_no = next(self._next_as_paths[node])
                 as_path = ASPathList(list_id=list_no, access=Access.permit, as_paths=match.match)
                 self.g.add_as_path_list(node, as_path)
             config += 'match as-path %s' % list_no
@@ -436,7 +437,7 @@ class CiscoConfigGen(object):
             iface = attrs.get('loopback')
             if not iface:
                 net = self.prefix_lookup(ann.prefix)
-                addr = ip_interface(u"%s/%d" % (net.hosts().next(), net.prefixlen))
+                addr = ip_interface(u"%s/%d" % (next(net.hosts()), net.prefixlen))
                 iface = "lo%s" % next_lo
                 desc = "For %s" % ann.prefix
                 self.g.set_loopback_addr(node, iface, addr)

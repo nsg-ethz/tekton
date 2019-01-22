@@ -8,6 +8,7 @@ from itertools import count
 import ipaddress
 import enum
 import networkx as nx
+from past.builtins import basestring
 
 from tekton.bgp import ASPathList
 from tekton.bgp import CommunityList
@@ -723,7 +724,7 @@ class NetworkGraph(nx.DiGraph):
         if community_list.list_id is None:
             list_id = None
             while list_id is None or list_id in lists:
-                list_id = self._counter.next()
+                list_id = next(self._counter)
             community_list._list_id = list_id
 
         assert community_list.list_id not in lists, "List exists %s" % community_list.list_id
@@ -848,7 +849,7 @@ class NetworkGraph(nx.DiGraph):
         if not prefix_list.name:
             name = None
             while not name or name in lists:
-                name = 'ip_list_{}_{}'.format(node, self._counter.next())
+                name = 'ip_list_{}_{}'.format(node, next(self._counter))
             prefix_list._name = name
         err = "Prefix list with '{}' is already defined at router {}".format(
             node, prefix_list.name)

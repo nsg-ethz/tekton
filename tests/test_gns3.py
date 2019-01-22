@@ -33,7 +33,7 @@ class GNS3ConfigTest(unittest.TestCase):
         # Act
         config = GNS3Config(**rand_vals)
         # Assert
-        for attr, value in rand_vals.iteritems():
+        for attr, value in rand_vals.items():
             self.assertEquals(getattr(config, attr), value)
 
 

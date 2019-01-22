@@ -18,6 +18,7 @@ setup(name='Tekton',
     install_requires=[
         'ipaddress',
         'enum34',
+        'future',
         'networkx>=2.2',
     ],
     long_description=read('README.md'),

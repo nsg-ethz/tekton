@@ -7,6 +7,7 @@ from enum import Enum
 from collections import Iterable
 from ipaddress import IPv4Network
 from ipaddress import IPv6Network
+from past.builtins import basestring
 
 from tekton.utils import is_empty
 from tekton.utils import is_symbolic
