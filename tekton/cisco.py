@@ -242,7 +242,7 @@ class CiscoConfigGen(object):
             next_hop = match.match
             parsed = None
             if isinstance(next_hop, basestring):
-                if '__DASH__' in next_hop:
+                if '_DASH_' in next_hop:
                     parsed = next_hop.split('_DASH_')
                 else:
                     parsed = next_hop.split('-')
