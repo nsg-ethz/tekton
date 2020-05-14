@@ -3,9 +3,6 @@
 Cisco specific configurations generator
 Tested with IOS 15.2
 """
-from builtins import str
-from builtins import next
-from builtins import object
 import itertools
 
 from ipaddress import IPv4Interface
@@ -102,7 +99,7 @@ class CiscoConfigGen(object):
                 continue
             network = self.prefix_lookup(network)
             lineno = (i + 1) * 10
-            network = ip_network(str(network))
+            network = ip_network(unicode(network))
             addr = str(getattr(network, 'network_address', network))
             prefixlen = getattr(network, 'prefixlen', 32)
             config += "ip prefix-list %s seq %d %s %s/%d\n" % (name, lineno,
@@ -149,60 +146,6 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_iface_config_rip(self, router, iface_name, addr, description=None, isloop=False, rip_cost=None):
-        """
-        Generate configuration for a given interface
-        :param iface_name: the name of the interface, e.graph. Fa0/0 or lo0
-        :param addr: instance of ip_interface
-        :param description: optional text description
-        :return: string config
-        """
-        err = "Not valid address {} for iface {}:{}".format(addr, router, iface_name)
-        assert isinstance(addr, (IPv4Interface, IPv6Interface)), err
-        config = ''
-        config += 'interface %s\n' % iface_name
-        config += " ip address %s %s\n" % (addr.ip, addr.netmask)
-        if rip_cost:
-            config += " isis metric %d\n" % rip_cost
-            network_type = self.g.get_ospf_interface_network_type(router, iface_name)
-            if network_type:
-                config += " ip ospf network {}\n".format(network_type.value)
-        if description:
-            config += ' description "{}"\n'.format(description)
-        if not isloop:
-            config += " speed auto\n"
-            config += " duplex auto\n"
-        config += "!\n"
-        return config
-
-
-    def gen_iface_config_isis(self, router, iface_name, addr, description=None, isloop=False, isis_cost=None):
-        """
-        Generate configuration for a given interface
-        :param iface_name: the name of the interface, e.graph. Fa0/0 or lo0
-        :param addr: instance of ip_interface
-        :param description: optional text description
-        :return: string config
-        """
-        err = "Not valid address {} for iface {}:{}".format(addr, router, iface_name)
-        assert isinstance(addr, (IPv4Interface, IPv6Interface)), err
-        config = ''
-        config += 'interface %s\n' % iface_name
-        config += " ip address %s %s\n" % (addr.ip, addr.netmask)
-        config += ' ip router isis\n'
-        if isis_cost:
-            config += " isis metric %d\n" % isis_cost
-            network_type = self.g.get_ospf_interface_network_type(router, iface_name)
-            if network_type:
-                config += " ip ospf network {}\n".format(network_type.value)
-        if description:
-            config += ' description "{}"\n'.format(description)
-        if not isloop:
-            config += " speed auto\n"
-            config += " duplex auto\n"
-        config += "!\n"
-        return config
-
     def gen_all_interface_configs(self, node):
         """
         Iterate over all interfaces (including loopbacks) to generate their configs
@@ -228,81 +171,6 @@ class CiscoConfigGen(object):
             config += self.gen_iface_config(node, lo, addr, desc, True, None)
         return config
 
-    def gen_all_interface_configs_rip(self, node):
-        """
-        Iterate over all interfaces (including loopbacks) to generate their configs
-        :param node: router name
-        :return: string configs
-        """
-        config = ''
-        for neighbor in self.g.neighbors(node):
-            iface = self.g.get_edge_iface(node, neighbor)
-            #addr = self.graph.get_edge_addr(node, neighbor)
-            addr = self.g.get_iface_addr(node, iface)
-            desc = self.g.get_iface_description(node, iface)
-            rip_cost = None
-            config += self.gen_iface_config_rip(node, iface, addr, desc, True, rip_cost)
-
-        # Loop back interface
-        for lo in sorted(self.g.get_loopback_interfaces(node)):
-            addr = self.g.get_loopback_addr(node, lo)
-            desc = self.g.get_loopback_description(node, lo)
-            config += self.gen_iface_config_rip(node, lo, addr, desc, True, None)
-        return config
-
-    def gen_all_interface_configs_isis(self, node):
-        """
-        Iterate over all interfaces (including loopbacks) to generate their configs
-        :param node: router name
-        :return: string configs
-        """
-        config = ''
-        for neighbor in self.g.neighbors(node):
-            iface = self.g.get_edge_iface(node, neighbor)
-            #addr = self.graph.get_edge_addr(node, neighbor)
-            addr = self.g.get_iface_addr(node, iface)
-            desc = self.g.get_iface_description(node, iface)
-            if self.g.is_ospf_enabled(node) and self.g.is_ospf_enabled(neighbor):
-                isis_cost = self.g.get_edge_ospf_cost(node, neighbor)
-            else:
-                isis_cost = None
-            config += self.gen_iface_config_isis(node, iface, addr, desc, True, isis_cost)
-
-        # Loop back interface
-        for lo in sorted(self.g.get_loopback_interfaces(node)):
-            addr = self.g.get_loopback_addr(node, lo)
-            desc = self.g.get_loopback_description(node, lo)
-            config += self.gen_iface_config_isis(node, lo, addr, desc, True, None)
-        return config
-
-    def gen_all_offset_lists(self, node):
-        """
-        Iterate over all interfaces (including loopbacks) to generate their configs
-        :param node: router name
-        :return: string configs
-        """
-        config = ''
-        tmp_config = ''
-        access_list = 'access-list 1 permit ip any any\n'
-        access_list_needed = False
-        for neighbor in self.g.neighbors(node):
-            iface = self.g.get_edge_iface(node, neighbor)
-            #addr = self.graph.get_edge_addr(node, neighbor)
-            addr = self.g.get_iface_addr(node, iface)
-            desc = self.g.get_iface_description(node, iface)
-            if self.g.is_ospf_enabled(node) and self.g.is_ospf_enabled(neighbor):
-                rip_cost = self.g.get_edge_ospf_cost(node, neighbor)
-                if rip_cost > 1 and access_list_needed == False:
-                    access_list_needed = True
-                    cost_increase = rip_cost - 1
-                    tmp_config += 'offset-list 1 out %d %s' %(cost_increase, iface)
-            else:
-                rip_cost = None
-        if access_list_needed:
-            config += access_list
-            config += tmp_config
-        return config
-
     def gen_all_communities_lists(self, node):
         """
         Get all communities list defined for the router
@@ -326,7 +194,7 @@ class CiscoConfigGen(object):
         """
         config = ""
         as_path_lists = self.g.get_as_path_list(node)
-        for as_path in list(as_path_lists.values()):
+        for as_path in as_path_lists.values():
             config += self.gen_as_path_list(node, as_path)
             config += "!\n"
         config += "!\n"
@@ -362,7 +230,7 @@ class CiscoConfigGen(object):
                 config += 'match ip address prefix-list %s' % match.match.name
         elif isinstance(match, MatchAsPath):
             list_no = None
-            for tmp in list(self.g.get_as_path_list(node).values()):
+            for tmp in self.g.get_as_path_list(node).values():
                 if tmp.as_paths == match.match:
                     list_no = tmp.list_id
             if not list_no:
@@ -565,7 +433,7 @@ class CiscoConfigGen(object):
         ifaces = []
         lines = []
         lineno = 5
-        for ann, attrs in self.g.get_bgp_advertise(node).items():
+        for ann, attrs in self.g.get_bgp_advertise(node).iteritems():
             iface = attrs.get('loopback')
             if not iface:
                 net = self.prefix_lookup(ann.prefix)
@@ -611,7 +479,7 @@ class CiscoConfigGen(object):
         process_id = self.g.get_ospf_process_id(node)
         config += "router ospf %d\n" % process_id
         config += " maximum-paths 32\n"
-        for network, area in self.g.get_ospf_networks(node).items():
+        for network, area in self.g.get_ospf_networks(node).iteritems():
             if network in self.g.get_loopback_interfaces(node):
                 network = self.g.get_loopback_addr(node, network).network
             elif network in self.g.get_ifaces(node):
@@ -621,47 +489,12 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-
-    def gen_all_rip(self, node):
-        if not self.g.is_ospf_enabled(node):
-            return ""
-        config = ""
-        process_id = self.g.get_ospf_process_id(node)
-        config += "router rip\n"
-        for network, area in self.g.get_ospf_networks(node).items():
-            if network in self.g.get_loopback_interfaces(node):
-                network = self.g.get_loopback_addr(node, network).network
-            elif network in self.g.get_ifaces(node):
-                network = self.g.get_iface_addr(node, network).network
-            assert isinstance(network, (IPv4Network, IPv6Network)), "Not valid network %s" % network
-            config += " network %s\n" % (network.network_address)
-        config += "!\n"
-        return config
-
-
-    def gen_all_isis(self, node):
-        if not self.g.is_ospf_enabled(node):
-            return ""
-        config = ""
-        config += "router isis\n"
-        for network, area in self.g.get_ospf_networks(node).items():
-            if network in self.g.get_loopback_interfaces(node):
-                network = self.g.get_loopback_addr(node, network).network
-            elif network in self.g.get_ifaces(node):
-                network = self.g.get_iface_addr(node, network).network
-            assert isinstance(network, (IPv4Network, IPv6Network)), "Not valid network %s" % network
-            # config += " network %s\n" % (network.network_address)
-        config += ' is-type level-1\n'
-        config += ' net 49.1234.0000.0000.0001.00 (PLACEHOLDER)\n'
-        config += "!\n"
-        return config
-
     def gen_static_routes(self, node):
         config = ""
         static_routes = self.g.get_static_routes(node)
         if not static_routes or is_empty(static_routes):
             return config
-        for prefix, next_hop in static_routes.items():
+        for prefix, next_hop in static_routes.iteritems():
             net = self.prefix_lookup(prefix)
             if self.g.is_router(next_hop):
                 iface = self.g.get_edge_iface(next_hop, node)
@@ -717,115 +550,6 @@ class CiscoConfigGen(object):
         config += '!\n'
         config += "!\n"
         config += self.gen_all_ospf(node)
-        config += "!\n"
-        config += self.gen_static_routes(node)
-        config += "!\n"
-        config += self.gen_tracker_configs(node)
-        config += "!\n"
-        configs = "!\n" + "\n!\n".join(preamble) + config + "\n".join(end)
-        configs += "\n"
-        return configs
-
-    def gen_router_config_rip(self, node):
-        """
-        Get the router configs
-        :param node: router
-        :return: configs string
-        """
-        assert self.g.is_router(node)
-        #if self.g.is_peer(node):
-        self.gen_external_announcements(node)
-
-        preamble = ["version 15.2",
-                    "service timestamps debug datetime msec",
-                    "service timestamps log datetime msec",
-                    "boot-start-marker",
-                    "boot-end-marker",
-                    "no aaa new-model",
-                    "ip cef",
-                    "no ipv6 cef",
-                    "multilink bundle-name authenticated",
-                    "ip forward-protocol nd",
-                    "no ip http server",
-                    "no ip http secure-server",
-                    "ip bgp-community new-format"]
-        end = ['!', '!', 'control-plane', '!', '!', 'line con 0', ' stopbits 1',
-               'line aux 0', ' stopbits 1', 'line vty 0 4', ' login', '!', 'end']
-
-        config = ""
-        config += "\n!\nhostname {node}\n!\n".format(node=node)
-        config += "!\n"
-        config += self.gen_all_interface_configs_rip(node)
-        config += "!\n"
-        config += self.gen_all_offset_lists(node)
-        config += "!\n"
-        config += self.gen_all_communities_lists(node)
-        config += "!\n"
-        config += self.gen_all_ip_prefixes(node)
-        config += "!\n"
-        config += self.gen_all_route_maps(node)
-        config += "!\n"
-        config += self.gen_bgp_config(node)
-        config += '!\n'
-        config += '!\n'
-        config += self.gen_all_as_path_lists(node)
-        config += '!\n'
-        config += "!\n"
-        config += self.gen_all_rip(node)
-        config += "!\n"
-        config += self.gen_static_routes(node)
-        config += "!\n"
-        config += self.gen_tracker_configs(node)
-        config += "!\n"
-        configs = "!\n" + "\n!\n".join(preamble) + config + "\n".join(end)
-        configs += "\n"
-        return configs
-
-
-    def gen_router_config_isis(self, node):
-        """
-        Get the router configs
-        :param node: router
-        :return: configs string
-        """
-        assert self.g.is_router(node)
-        #if self.g.is_peer(node):
-        self.gen_external_announcements(node)
-
-        preamble = ["version 15.2",
-                    "service timestamps debug datetime msec",
-                    "service timestamps log datetime msec",
-                    "boot-start-marker",
-                    "boot-end-marker",
-                    "no aaa new-model",
-                    "ip cef",
-                    "no ipv6 cef",
-                    "multilink bundle-name authenticated",
-                    "ip forward-protocol nd",
-                    "no ip http server",
-                    "no ip http secure-server",
-                    "ip bgp-community new-format"]
-        end = ['!', '!', 'control-plane', '!', '!', 'line con 0', ' stopbits 1',
-               'line aux 0', ' stopbits 1', 'line vty 0 4', ' login', '!', 'end']
-
-        config = ""
-        config += "\n!\nhostname {node}\n!\n".format(node=node)
-        config += "!\n"
-        config += self.gen_all_interface_configs_isis(node)
-        config += "!\n"
-        config += self.gen_all_communities_lists(node)
-        config += "!\n"
-        config += self.gen_all_ip_prefixes(node)
-        config += "!\n"
-        config += self.gen_all_route_maps(node)
-        config += "!\n"
-        config += self.gen_bgp_config(node)
-        config += '!\n'
-        config += '!\n'
-        config += self.gen_all_as_path_lists(node)
-        config += '!\n'
-        config += "!\n"
-        config += self.gen_all_isis(node)
         config += "!\n"
         config += self.gen_static_routes(node)
         config += "!\n"

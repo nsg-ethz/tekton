@@ -2,8 +2,6 @@
 Handles GNS3 topology generation
 """
 
-from builtins import next
-from builtins import object
 import itertools
 import os
 import shutil
@@ -22,13 +20,12 @@ class GNS3Config(object):
     default_dynampis_addr = '127.0.0.1:7200'
     default_console_start_port = 2501
     default_working_dir = '/tmp'
-    # default_ios_image = '/home/ahassany/GNS3/images/IOS/c7200-advipservicesk9-mz.152-4.S5.image'
-    default_ios_image = '/home/robin/GNS3/images/c7200-adventerprisek9-mz.124-24.T8.image'
+    default_ios_image = '/home/ahassany/GNS3/images/IOS/c7200-advipservicesk9-mz.152-4.S5.image'
     default_router_model = '7200'
-    default_idlepc = '0x606e0510'
+    default_idlepc = '0x631868a4'
     default_idelmax = '500'
-    default_ram = '512'
-    default_nvram = '512'
+    default_ram = '256'
+    default_nvram = '50'
     default_npe = 'npe-400'
 
     def __init__(
@@ -100,12 +97,12 @@ class GNS3Topo(object):
         topo += "\tudp = 15000"
         topo += "\n"
         topo += "\t[[ %s ]]\n" % self.gns3_config.router_model
-        for key, value in list(self.router_info.items()):
+        for key, value in self.router_info.items():
             topo += "\t\t%s = %s\n" % (key, value)
         for node in sorted(list(self.graph.routers_iter())):
             topo += "\t[[ ROUTER %s ]]\n" % node
             self._annotate_node(node)
-            for key, value in list(self.graph.node[node]['dyn'].items()):
+            for key, value in self.graph.node[node]['dyn'].items():
                 topo += "\t\t%s = %s\n" % (key, value)
             for neighbor in self.graph.neighbors(node):
                 siface = self.graph.get_edge_iface(node, neighbor)
@@ -116,14 +113,6 @@ class GNS3Topo(object):
     def gen_router_config(self, node):
         """Get the config for a give router"""
         return self.config_gen.gen_router_config(node)
-
-    def gen_router_config_rip(self, node):
-        """Get the config for a give router"""
-        return self.config_gen.gen_router_config_rip(node)
-
-    def gen_router_config_isis(self, node):
-        """Get the config for a give router"""
-        return self.config_gen.gen_router_config_isis(node)
 
     def write_configs(self, out_folder):
         """Generate the routers configs"""
@@ -148,52 +137,3 @@ class GNS3Topo(object):
             cfg_file = os.path.join(configs_folder, "%s.cfg" % node)
             with open(cfg_file, 'w') as fhandle:
                 fhandle.write(cfg)
-
-    def write_configs_rip(self, out_folder):
-        """Generate the routers configs"""
-        # Generating interface addresses
-        self.graph.set_iface_names()
-
-        # Clean up
-        shutil.rmtree(out_folder, True)
-        # os.mkdir(out_folder)
-        # ROBIN changed to makedirs to create intermediate folders as well
-        os.makedirs(out_folder)
-
-        topo_file = os.path.join(out_folder, 'topo.ini')
-        topo_file_str = self.get_gns3_topo()
-        with open(topo_file, 'w') as fhandle:
-            fhandle.write(topo_file_str)
-
-        configs_folder = os.path.join(out_folder, 'configs')
-        os.mkdir(configs_folder)
-        for node in sorted(list(self.graph.routers_iter())):
-            cfg = self.gen_router_config_rip(node)
-            cfg_file = os.path.join(configs_folder, "%s.cfg" % node)
-            with open(cfg_file, 'w') as fhandle:
-                fhandle.write(cfg)
-
-    def write_configs_isis(self, out_folder):
-        """Generate the routers configs"""
-        # Generating interface addresses
-        self.graph.set_iface_names()
-
-        # Clean up
-        shutil.rmtree(out_folder, True)
-        # os.mkdir(out_folder)
-        # ROBIN changed to makedirs to create intermediate folders as well
-        os.makedirs(out_folder)
-
-        topo_file = os.path.join(out_folder, 'topo.ini')
-        topo_file_str = self.get_gns3_topo()
-        with open(topo_file, 'w') as fhandle:
-            fhandle.write(topo_file_str)
-
-        configs_folder = os.path.join(out_folder, 'configs')
-        os.mkdir(configs_folder)
-        for node in sorted(list(self.graph.routers_iter())):
-            cfg = self.gen_router_config_isis(node)
-            cfg_file = os.path.join(configs_folder, "%s.cfg" % node)
-            with open(cfg_file, 'w') as fhandle:
-                fhandle.write(cfg)
-

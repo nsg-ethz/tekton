@@ -3,7 +3,6 @@
 Examples of using Tekton for a network of iBGP network with external Peer
 """
 
-from builtins import next
 from ipaddress import ip_interface
 from ipaddress import ip_network
 

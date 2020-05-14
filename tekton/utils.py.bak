@@ -1,6 +1,5 @@
 
 
-from builtins import str
 __author__ = "Ahmed El-Hassany"
 __email__ = "a.hassany@gmail.com"
 

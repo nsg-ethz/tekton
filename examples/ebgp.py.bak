@@ -3,7 +3,6 @@
 Examples of using Tekton for a network of two routers connected via eBGP
 """
 
-from builtins import next
 from ipaddress import ip_interface
 from ipaddress import ip_network
 

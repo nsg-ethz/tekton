@@ -3,7 +3,6 @@
 Synthesize directly connected interfaces
 """
 
-from builtins import object
 from ipaddress import IPv4Network
 from ipaddress import IPv6Network
 from ipaddress import ip_address

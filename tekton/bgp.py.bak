@@ -3,9 +3,6 @@
 Various helpers with configuring BGP related Policies
 """
 
-from builtins import str
-from builtins import range
-from builtins import object
 from enum import Enum
 from collections import Iterable
 from ipaddress import IPv4Network
@@ -95,7 +92,7 @@ class Announcement(object):
 
     def copy(self):
         comms = {}
-        for comm, fun in self.communities.items():
+        for comm, fun in self.communities.iteritems():
             comms[comm] = fun
         return Announcement(
             prefix=self.prefix, peer=self.peer, origin=self.origin,

@@ -4,8 +4,6 @@ Extension of the networkx.DiGraph to allow easy synthesis
 and network specific annotations.
 """
 
-from builtins import str
-from builtins import next
 from itertools import count
 import ipaddress
 import enum
@@ -318,7 +316,7 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_router(node)
         assert is_bool_or_notset(is_shutdown)
         ifaces = self.get_ifaces(node)
-        assert iface_name not in ifaces, "%s in %s" % (iface_name, list(ifaces.keys()))
+        assert iface_name not in ifaces, "%s in %s" % (iface_name, ifaces.keys())
         ifaces[iface_name] = {'shutdown': is_shutdown,
                               'addr': None,
                               'description': None}
@@ -334,7 +332,7 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_router(node)
         assert is_valid_add(addr)
         ifaces = self.get_ifaces(node)
-        err = "Undefined iface '%s' in %s" % (iface_name, list(ifaces.keys()))
+        err = "Undefined iface '%s' in %s" % (iface_name, ifaces.keys())
         assert iface_name in ifaces, err
         ifaces[iface_name]['addr'] = addr
 
@@ -342,7 +340,7 @@ class NetworkGraph(nx.DiGraph):
         """Return the address of an interface or None"""
         assert self.is_router(node)
         ifaces = self.get_ifaces(node)
-        err = "Undefined iface '%s' in %s" % (iface_name, list(ifaces.keys()))
+        err = "Undefined iface '%s' in %s" % (iface_name, ifaces.keys())
         assert iface_name in ifaces, err
         return ifaces[iface_name]['addr']
 
@@ -350,7 +348,7 @@ class NetworkGraph(nx.DiGraph):
         """Assigns some help text to the interface"""
         assert self.is_router(node)
         ifaces = self.get_ifaces(node)
-        err = "Undefined iface '%s' in %s" % (iface_name, list(ifaces.keys()))
+        err = "Undefined iface '%s' in %s" % (iface_name, ifaces.keys())
         assert iface_name in ifaces, err
         ifaces[iface_name]['description'] = description
 
@@ -358,7 +356,7 @@ class NetworkGraph(nx.DiGraph):
         """Get help text to the interface (if exists)"""
         assert self.is_router(node)
         ifaces = self.get_ifaces(node)
-        err = "Undefined iface '%s' in %s" % (iface_name, list(ifaces.keys()))
+        err = "Undefined iface '%s' in %s" % (iface_name, ifaces.keys())
         assert iface_name in ifaces, err
         return ifaces[iface_name]['description']
 
@@ -366,7 +364,7 @@ class NetworkGraph(nx.DiGraph):
         """Return True if the interface is set to be shutdown"""
         assert self.is_router(node)
         ifaces = self.get_ifaces(node)
-        err = "Undefined iface '%s' in %s" % (iface_name, list(ifaces.keys()))
+        err = "Undefined iface '%s' in %s" % (iface_name, ifaces.keys())
         assert iface_name in ifaces, err
         return ifaces[iface_name]['shutdown']
 
@@ -375,7 +373,7 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_router(node)
         assert is_bool_or_notset(is_shutdown)
         ifaces = self.get_ifaces(node)
-        err = "Undefined iface '%s' in %s" % (iface_name, list(ifaces.keys()))
+        err = "Undefined iface '%s' in %s" % (iface_name, ifaces.keys())
         assert iface_name in ifaces, err
         ifaces[iface_name]['shutdown'] = is_shutdown
 
@@ -446,17 +444,6 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_local_router(node), err
         self.node[node]['ospf'] = dict(process_id=process_id, networks={})
 
-    def enable_rip(self, node, process_id=100):
-        """
-        Enable RIP at a given router
-        :param node: local router
-        :param process_id: integer
-        :return: None
-        """
-        err = "Cannot enable RIP on router {}".format(node)
-        assert self.is_local_router(node), err
-        self.node[node]['rip'] = dict(process_id=process_id, networks={})
-
     def get_ospf_process_id(self, node):
         """Return the OSPF process ID"""
         err1 = "OSPF is not enabled on router: {}".format(node)
@@ -472,16 +459,6 @@ class NetworkGraph(nx.DiGraph):
         if not self.is_local_router(node):
             return False
         return 'ospf' in self.node[node]
-
-    def is_rip_enabled(self, node):
-        """
-        Return True if the node has RIP process
-        :param node: local router
-        :return: bool
-        """
-        if not self.is_local_router(node):
-            return False
-        return 'rip' in self.node[node]
 
     def get_ospf_networks(self, node):
         """
@@ -517,20 +494,6 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_ospf_enabled(dst), err2
         self[src][dst]['ospf_cost'] = cost
 
-    def set_edge_rip_cost(self, src, dst, cost):
-        """
-        Set the RIP cost of an edge
-        :param src: RIP enabled local router
-        :param dst: RIP enabled local router
-        :param cost: int or VALUENOTSET
-        :return: None
-        """
-        err1 = "RIP is not enabled on router: {}".format(src)
-        err2 = "RIP is not enabled on router: {}".format(dst)
-        assert self.is_rip_enabled(src), err1
-        assert self.is_rip_enabled(dst), err2
-        self[src][dst]['rip_cost'] = cost
-
     def get_edge_ospf_cost(self, src, dst):
         """
         Get the OSPF cost of an edge
@@ -543,19 +506,6 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_ospf_enabled(src), err1
         assert self.is_ospf_enabled(dst), err2
         return self[src][dst].get('ospf_cost', None)
-
-    def get_edge_rip_cost(self, src, dst):
-        """
-        Get the RIP cost of an edge
-        :param src: OSPF enabled local router
-        :param dst: OSPF enabled local router
-        :return: None, VALUENOTSET, int
-        """
-        err1 = "RIP is not enabled on router: {}".format(src)
-        err2 = "RIP is not enabled on router: {}".format(dst)
-        assert self.is_rip_enabled(src), err1
-        assert self.is_rip_enabled(dst), err2
-        return self[src][dst].get('rip_cost', None)
 
     def set_ospf_interface_network_type(self, node, iface, network_type):
         """
@@ -669,7 +619,7 @@ class NetworkGraph(nx.DiGraph):
     def set_bgp_neighbor_iface(self, node, neighbor, iface):
         """Set the interface to which the peering session to be established"""
         neighbors = self.get_bgp_neighbors(node)
-        assert neighbor in neighbors, list(neighbors.keys())
+        assert neighbor in neighbors, neighbors.keys()
         is_iface = iface in self.get_ifaces(neighbor)
         is_loopback = iface in self.get_loopback_interfaces(neighbor)
         err = "Cannot peer node {} with node {}:{}. " \
