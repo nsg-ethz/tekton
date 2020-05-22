@@ -643,7 +643,12 @@ class CiscoConfigGen(object):
         if not self.g.is_ospf_enabled(node):
             return ""
         config = ""
+        config_passive_int = ""
+        config_net_addr = ""
+        config_net_addr_tmp = ""
+        config_metric_style = ""
         config += "router isis\n"
+        loopback_interface_ip = ''
         for network, area in self.g.get_ospf_networks(node).items():
             if network in self.g.get_loopback_interfaces(node):
                 network = self.g.get_loopback_addr(node, network).network
@@ -651,8 +656,36 @@ class CiscoConfigGen(object):
                 network = self.g.get_iface_addr(node, network).network
             assert isinstance(network, (IPv4Network, IPv6Network)), "Not valid network %s" % network
             # config += " network %s\n" % (network.network_address)
-        config += ' is-type level-1\n'
-        config += ' net 49.1234.0000.0000.0001.00 (PLACEHOLDER)\n'
+        config += ' is-type level-2\n'
+        config_net_addr += ' net 49.0001.'
+
+        if len(self.g.get_loopback_interfaces(node)) == 0:
+            config_net_addr += "1921.6800.1001"
+
+        for lo in sorted(self.g.get_loopback_interfaces(node)):
+            config_passive_int += " passive interface " + str(lo) + "\n"
+
+            addr = str(self.g.get_loopback_addr(node, lo))
+            addr = addr.split("/")[0]
+            net_addr = ""
+            for element in addr.split("."):
+                length = 3-len(element)
+                if length == 0:
+                    net_addr += element
+                if length == 1:
+                    net_addr += "0"+element
+                if length == 2:
+                    net_addr += "00"+element
+            config_net_addr_tmp = '.'.join(net_addr[i:i+4] for i in range(0,len(net_addr),4))
+        config_net_addr += config_net_addr_tmp + ".00\n"
+
+        config_metric_style += " metric-stlye wide\n"
+
+
+
+        config += config_net_addr
+        config += config_passive_int
+        config += config_metric_style
         config += "!\n"
         return config
 
