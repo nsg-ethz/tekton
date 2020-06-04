@@ -70,7 +70,7 @@ class GNS3Config(object):
 class GNS3Topo(object):
     """To Generate GNS3 configs"""
 
-    def __init__(self, graph, protocol=cfg_file.Protocols.BGP, prefix_map=None, gns3_config=None):
+    def __init__(self, graph, prefix_map=None, protocol=cfg_file.Protocols.BGP, gns3_config=None):
         #protocol reflects the enum of the igp protocol
         assert isinstance(graph, NetworkGraph)
         self.prefix_map = prefix_map if prefix_map else {}

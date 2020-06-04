@@ -829,7 +829,7 @@ class CiscoConfigGen(object):
         config += "!\n"
 
         # TEST AREA
-        config += "\n~~Router is area: " + str(self.g.nodes[node]['area']) + "\n\n"
+        # config += "\n~~Router is area: " + str(self.g.nodes[node]['area']) + "\n\n"
 
         config += self.gen_all_interface_configs(node, protocol)
 
