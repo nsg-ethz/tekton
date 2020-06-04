@@ -1,4 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="090ffa2f-0889-4b6e-8e22-0fc7b6935a98" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/tekton/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/bgp.py.bak" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/cisco.py" beforeDir="false" afterPath="$PROJECT_DIR$/tekton/cisco.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/cisco.py.bak" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/connected.py.bak" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/gns3.py" beforeDir="false" afterPath="$PROJECT_DIR$/tekton/gns3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/gns3.py.bak" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/tekton/graph.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/graph.py.bak" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tekton/utils.py.bak" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="ProjectId" id="1ZzIg1NpcjAjvMj4jZzm6cZXwMu" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="090ffa2f-0889-4b6e-8e22-0fc7b6935a98" name="Default Changelist" comment="" />
+      <created>1590152190839</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1590152190839</updated>
+      <workItem from="1590152193423" duration="10906000" />
+      <workItem from="1590424456512" duration="1115000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="2" />
+  </component>
 </project>

@@ -10,6 +10,7 @@ import shutil
 
 from tekton.cisco import CiscoConfigGen
 from tekton.graph import NetworkGraph
+import tekton.config as cfg_file
 
 
 __author__ = "Ahmed El-Hassany"
@@ -19,17 +20,28 @@ __email__ = "a.hassany@gmail.com"
 class GNS3Config(object):
     """Helper class to set the parameters of GNS3"""
 
-    default_dynampis_addr = '127.0.0.1:7200'
-    default_console_start_port = 2501
-    default_working_dir = '/tmp'
-    # default_ios_image = '/home/ahassany/GNS3/images/IOS/c7200-advipservicesk9-mz.152-4.S5.image'
-    default_ios_image = '/home/robin/GNS3/images/c7200-adventerprisek9-mz.124-24.T8.image'
-    default_router_model = '7200'
-    default_idlepc = '0x606e0510'
-    default_idelmax = '500'
-    default_ram = '512'
-    default_nvram = '512'
-    default_npe = 'npe-400'
+    # default_dynampis_addr = '127.0.0.1:7200'
+    # default_console_start_port = 2501
+    # default_working_dir = '/tmp'
+    # # default_ios_image = '/home/ahassany/GNS3/images/IOS/c7200-advipservicesk9-mz.152-4.S5.image'
+    # default_ios_image = '/home/robin/GNS3/images/c7200-adventerprisek9-mz.124-24.T8.image'
+    # default_router_model = '7200'
+    # default_idlepc = '0x606e0510'
+    # default_idelmax = '500'
+    # default_ram = '512'
+    # default_nvram = '512'
+    # default_npe = 'npe-400'
+
+    default_dynampis_addr = cfg_file.default_dynampis_addr
+    default_console_start_port = cfg_file.default_console_start_port
+    default_working_dir = cfg_file.default_working_dir
+    default_ios_image = cfg_file.default_ios_image
+    default_router_model = cfg_file.default_router_model
+    default_idlepc = cfg_file.default_idlepc
+    default_idelmax = cfg_file.default_idelmax
+    default_ram = cfg_file.default_ram
+    default_nvram = cfg_file.default_nvram
+    default_npe = cfg_file.default_npe
 
     def __init__(
             self,
@@ -58,10 +70,13 @@ class GNS3Config(object):
 class GNS3Topo(object):
     """To Generate GNS3 configs"""
 
-    def __init__(self, graph, prefix_map=None, gns3_config=None):
+    def __init__(self, graph, protocol=cfg_file.Protocols.BGP, prefix_map=None, gns3_config=None):
+        #protocol reflects the enum of the igp protocol
         assert isinstance(graph, NetworkGraph)
         self.prefix_map = prefix_map if prefix_map else {}
         self.graph = graph
+        assert isinstance(protocol, cfg_file.Protocols), "Protocol is not part of supported protocols"
+        self.protocol = protocol
         if not gns3_config:
             gns3_config = GNS3Config()
         self.gns3_config = gns3_config
@@ -113,9 +128,9 @@ class GNS3Topo(object):
                 topo += "\t\t%s = %s %s\n" % (siface, neighbor, diface)
         return topo
 
-    def gen_router_config(self, node):
+    def gen_router_config(self, node, protocol):
         """Get the config for a give router"""
-        return self.config_gen.gen_router_config(node)
+        return self.config_gen.gen_router_config(node, protocol)
 
     def gen_router_config_rip(self, node):
         """Get the config for a give router"""
@@ -144,7 +159,7 @@ class GNS3Topo(object):
         configs_folder = os.path.join(out_folder, 'configs')
         os.mkdir(configs_folder)
         for node in sorted(list(self.graph.routers_iter())):
-            cfg = self.gen_router_config(node)
+            cfg = self.gen_router_config(node, self.protocol)
             cfg_file = os.path.join(configs_folder, "%s.cfg" % node)
             with open(cfg_file, 'w') as fhandle:
                 fhandle.write(cfg)

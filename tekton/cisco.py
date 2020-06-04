@@ -37,6 +37,9 @@ from tekton.bgp import IpPrefixList
 from tekton.utils import is_empty
 from tekton.utils import is_symbolic
 
+import tekton.config as cfg_file
+
+
 
 __author__ = "Ahmed El-Hassany"
 __email__ = "a.hassany@gmail.com"
@@ -123,12 +126,13 @@ class CiscoConfigGen(object):
         config += "ip as-path access %s %s ^%s$\n" % (name, access, '_'.join([str(t) for t in as_path[1:]]))
         return config
 
-    def gen_iface_config(self, router, iface_name, addr, description=None, isloop=False, ospf_cost=None):
+    def gen_iface_config(self, router, iface_name, addr, protocol, description=None, isloop=False, igp_cost=None):
         """
         Generate configuration for a given interface
         :param iface_name: the name of the interface, e.graph. Fa0/0 or lo0
         :param addr: instance of ip_interface
         :param description: optional text description
+        :param protocol: IGP protocol
         :return: string config
         """
         err = "Not valid address {} for iface {}:{}".format(addr, router, iface_name)
@@ -136,11 +140,18 @@ class CiscoConfigGen(object):
         config = ''
         config += 'interface %s\n' % iface_name
         config += " ip address %s %s\n" % (addr.ip, addr.netmask)
-        if ospf_cost:
-            config += " ip ospf cost %d\n" % ospf_cost
-            network_type = self.g.get_ospf_interface_network_type(router, iface_name)
-            if network_type:
-                config += " ip ospf network {}\n".format(network_type.value)
+        if protocol == cfg_file.Protocols.ISIS_WIDE or protocol == cfg_file.Protocols.ISIS_NARROW:
+            config += ' ip router isis\n'
+
+        #RIP enters function with igp_cost == None
+        if igp_cost:
+            if protocol == cfg_file.Protocols.ISIS_WIDE or protocol == cfg_file.Protocols.ISIS_NARROW:
+                config += " isis metric %d\n" % igp_cost
+            else:
+                config += " ip ospf cost %d\n" % igp_cost
+                network_type = self.g.get_ospf_interface_network_type(router, iface_name)
+                if network_type:
+                    config += " ip ospf network {}\n".format(network_type.value)
         if description:
             config += ' description "{}"\n'.format(description)
         if not isloop:
@@ -203,10 +214,11 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_all_interface_configs(self, node):
+    def gen_all_interface_configs(self, node, protocol):
         """
         Iterate over all interfaces (including loopbacks) to generate their configs
         :param node: router name
+        :param protocol: igp protocol
         :return: string configs
         """
         config = ''
@@ -215,11 +227,24 @@ class CiscoConfigGen(object):
             #addr = self.graph.get_edge_addr(node, neighbor)
             addr = self.g.get_iface_addr(node, iface)
             desc = self.g.get_iface_description(node, iface)
-            if self.g.is_ospf_enabled(node) and self.g.is_ospf_enabled(neighbor):
-                ospf_cost = self.g.get_edge_ospf_cost(node, neighbor)
+            if protocol == cfg_file.Protocols.RIP:
+                rip_cost = None
+                #enter no cost and loopback True (avoids speed and duplex config)
+                config += self.gen_iface_config(node, iface, addr, protocol, desc, True, rip_cost)
+
+            elif protocol == cfg_file.Protocols.ISIS_NARROW or protocol == cfg_file.Protocols.ISIS_WIDE:
+                if self.g.is_ospf_enabled(node) and self.g.is_ospf_enabled(neighbor):
+                    isis_cost = self.g.get_edge_ospf_cost(node, neighbor)
+                else:
+                    isis_cost = None
+                config += self.gen_iface_config(node, iface, addr, protocol, desc, True, isis_cost)
+
             else:
-                ospf_cost = None
-            config += self.gen_iface_config(node, iface, addr, desc, False, ospf_cost)
+                if self.g.is_ospf_enabled(node) and self.g.is_ospf_enabled(neighbor):
+                    ospf_cost = self.g.get_edge_ospf_cost(node, neighbor)
+                else:
+                    ospf_cost = None
+                config += self.gen_iface_config(node, iface, addr, protocol, desc, False, ospf_cost)
 
         # Loop back interface
         for lo in sorted(self.g.get_loopback_interfaces(node)):
@@ -621,6 +646,72 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
+    def gen_all_igp(self, node, protocol):
+        if not self.g.is_ospf_enabled(node):
+            return ""
+        config = ""
+        process_id = self.g.get_ospf_process_id(node)
+        config_passive_int = ""
+        config_net_addr = ""
+        config_net_addr_tmp = ""
+        config_metric_style = ""
+        loopback_interface_ip = ''
+
+        if protocol == cfg_file.Protocols.OSPF:
+            config += "router ospf %d\n" % process_id
+            config += " maximum-paths 32\n"
+        if protocol == cfg_file.Protocols.RIP:
+            config += "router rip\n"
+        if protocol == cfg_file.Protocols.ISIS_WIDE or protocol == cfg_file.Protocols.ISIS_NARROW:
+            config += "router isis\n"
+
+        for network, area in self.g.get_ospf_networks(node).items():
+            if network in self.g.get_loopback_interfaces(node):
+                network = self.g.get_loopback_addr(node, network).network
+            elif network in self.g.get_ifaces(node):
+                network = self.g.get_iface_addr(node, network).network
+            assert isinstance(network, (IPv4Network, IPv6Network)), "Not valid network %s" % network
+            if protocol == cfg_file.Protocols.OSPF:
+                config += " network %s %s area %s\n" % (network.network_address, network.hostmask, area)
+            if protocol == cfg_file.Protocols.RIP:
+                config += " network %s\n" % (network.network_address)
+
+        #For ISIS get NET address, configure passive loopback interfaces and set the metric style
+        if protocol == cfg_file.Protocols.ISIS_WIDE or protocol == cfg_file.Protocols.ISIS_NARROW:
+            config += ' is-type level-2\n'
+            config_net_addr += ' net 49.0001.'
+
+            if len(self.g.get_loopback_interfaces(node)) == 0:
+                config_net_addr += "1921.6800.1001"
+
+            for lo in sorted(self.g.get_loopback_interfaces(node)):
+                config_passive_int += " passive interface " + str(lo) + "\n"
+
+                addr = str(self.g.get_loopback_addr(node, lo))
+                addr = addr.split("/")[0]
+                net_addr = ""
+                for element in addr.split("."):
+                    length = 3 - len(element)
+                    if length == 0:
+                        net_addr += element
+                    if length == 1:
+                        net_addr += "0" + element
+                    if length == 2:
+                        net_addr += "00" + element
+                config_net_addr_tmp = '.'.join(net_addr[i:i + 4] for i in range(0, len(net_addr), 4))
+            config_net_addr += config_net_addr_tmp + ".00\n"
+
+            if protocol == cfg_file.Protocols.ISIS_WIDE:
+                config_metric_style += " metric-stlye wide\n"
+            if protocol == cfg_file.Protocols.ISIS_NARROW:
+                config_metric_style += " metric-stlye narrow\n"
+
+            config += config_net_addr
+            config += config_passive_int
+            config += config_metric_style
+
+        config += "!\n"
+        return config
 
     def gen_all_rip(self, node):
         if not self.g.is_ospf_enabled(node):
@@ -706,10 +797,11 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_router_config(self, node):
+    def gen_router_config(self, node, protocol):
         """
         Get the router configs
         :param node: router
+        :param protocol: igp protocol
         :return: configs string
         """
         assert self.g.is_router(node)
@@ -735,7 +827,16 @@ class CiscoConfigGen(object):
         config = ""
         config += "\n!\nhostname {node}\n!\n".format(node=node)
         config += "!\n"
-        config += self.gen_all_interface_configs(node)
+
+        # TEST AREA
+        config += "\n~~Router is area: " + str(self.g.nodes[node]['area']) + "\n\n"
+
+        config += self.gen_all_interface_configs(node, protocol)
+
+        if protocol == cfg_file.Protocols.RIP:
+            config += "!\n"
+            config += self.gen_all_offset_lists(node)
+
         config += "!\n"
         config += self.gen_all_communities_lists(node)
         config += "!\n"
@@ -749,7 +850,7 @@ class CiscoConfigGen(object):
         config += self.gen_all_as_path_lists(node)
         config += '!\n'
         config += "!\n"
-        config += self.gen_all_ospf(node)
+        config += self.gen_all_igp(node, protocol)
         config += "!\n"
         config += self.gen_static_routes(node)
         config += "!\n"

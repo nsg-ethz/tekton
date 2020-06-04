@@ -435,6 +435,17 @@ class NetworkGraph(nx.DiGraph):
         """
         self.node[node]['static'] = VALUENOTSET
 
+    def enable_igp(self, node, process_id=100):
+        """
+        Enable OSPF at a given router
+        :param node: local router
+        :param process_id: integer
+        :return: None
+        """
+        err = "Cannot enable IGP on router {}".format(node)
+        assert self.is_local_router(node), err
+        self.node[node]['igp'] = dict(process_id=process_id, networks={})
+
     def enable_ospf(self, node, process_id=100):
         """
         Enable OSPF at a given router
@@ -462,6 +473,16 @@ class NetworkGraph(nx.DiGraph):
         err1 = "OSPF is not enabled on router: {}".format(node)
         assert self.is_ospf_enabled(node), err1
         return self.node[node]['ospf']['process_id']
+
+    def is_igp_enabled(self, node):
+        """
+        Return True if the node has OSPF process
+        :param node: local router
+        :return: bool
+        """
+        if not self.is_local_router(node):
+            return False
+        return 'igp' in self.node[node]
 
     def is_ospf_enabled(self, node):
         """
@@ -503,6 +524,20 @@ class NetworkGraph(nx.DiGraph):
         networks = self.get_ospf_networks(node)
         networks[network] = area
 
+    def set_edge_igp_cost(self, src, dst, cost):
+        """
+        Set the OSPF cost of an edge
+        :param src: OSPF enabled local router
+        :param dst: OSPF enabled local router
+        :param cost: int or VALUENOTSET
+        :return: None
+        """
+        err1 = "IGP is not enabled on router: {}".format(src)
+        err2 = "IGP is not enabled on router: {}".format(dst)
+        assert self.is_igp_enabled(src), err1
+        assert self.is_igp_enabled(dst), err2
+        self[src][dst]['igp_cost'] = cost
+
     def set_edge_ospf_cost(self, src, dst, cost):
         """
         Set the OSPF cost of an edge
@@ -530,6 +565,20 @@ class NetworkGraph(nx.DiGraph):
         assert self.is_rip_enabled(src), err1
         assert self.is_rip_enabled(dst), err2
         self[src][dst]['rip_cost'] = cost
+
+
+    def get_edge_igp_cost(self, src, dst):
+        """
+        Get the OSPF cost of an edge
+        :param src: OSPF enabled local router
+        :param dst: OSPF enabled local router
+        :return: None, VALUENOTSET, int
+        """
+        err1 = "IGP is not enabled on router: {}".format(src)
+        err2 = "IGP is not enabled on router: {}".format(dst)
+        assert self.is_igp_enabled(src), err1
+        assert self.is_igp_enabled(dst), err2
+        return self[src][dst].get('igp_cost', None)
 
     def get_edge_ospf_cost(self, src, dst):
         """
