@@ -646,7 +646,7 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_all_igp(self, node, protocol):
+    def gen_all_igp(self, node, protocol, no_summary_areas, ABR_list, stub_area_list):
         if not self.g.is_ospf_enabled(node):
             return ""
         config = ""
@@ -665,6 +665,7 @@ class CiscoConfigGen(object):
         if protocol == cfg_file.Protocols.ISIS_WIDE or protocol == cfg_file.Protocols.ISIS_NARROW:
             config += "router isis\n"
 
+        areas_stubbed = []
         for network, area in self.g.get_ospf_networks(node).items():
             if network in self.g.get_loopback_interfaces(node):
                 network = self.g.get_loopback_addr(node, network).network
@@ -672,6 +673,19 @@ class CiscoConfigGen(object):
                 network = self.g.get_iface_addr(node, network).network
             assert isinstance(network, (IPv4Network, IPv6Network)), "Not valid network %s" % network
             if protocol == cfg_file.Protocols.OSPF:
+                if area not in areas_stubbed:
+                    if area != 0:
+                        if area in stub_area_list:
+                            if node in ABR_list:
+                                if area in no_summary_areas:
+                                    config += " area %s stub no-summary\n" % (area)
+                                    areas_stubbed.append(area)
+                                else:
+                                    config += " area %s stub\n" % (area)
+                                    areas_stubbed.append(area)
+                            else:
+                                config += " area %s stub\n" % (area)
+                                areas_stubbed.append(area)
                 config += " network %s %s area %s\n" % (network.network_address, network.hostmask, area)
             if protocol == cfg_file.Protocols.RIP:
                 config += " network %s\n" % (network.network_address)
@@ -797,7 +811,7 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_router_config(self, node, protocol):
+    def gen_router_config(self, node, protocol, no_summary_areas, ABR_list, stub_area_list):
         """
         Get the router configs
         :param node: router
@@ -850,7 +864,7 @@ class CiscoConfigGen(object):
         config += self.gen_all_as_path_lists(node)
         config += '!\n'
         config += "!\n"
-        config += self.gen_all_igp(node, protocol)
+        config += self.gen_all_igp(node, protocol, no_summary_areas, ABR_list, stub_area_list)
         config += "!\n"
         config += self.gen_static_routes(node)
         config += "!\n"
