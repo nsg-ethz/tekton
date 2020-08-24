@@ -646,7 +646,7 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_all_igp(self, node, protocol, no_summary_areas, ABR_list, stub_area_list):
+    def gen_all_igp(self, node, protocol, ABR_list, stub_dict):
         if not self.g.is_ospf_enabled(node):
             return ""
         config = ""
@@ -672,21 +672,68 @@ class CiscoConfigGen(object):
             elif network in self.g.get_ifaces(node):
                 network = self.g.get_iface_addr(node, network).network
             assert isinstance(network, (IPv4Network, IPv6Network)), "Not valid network %s" % network
+
             if protocol == cfg_file.Protocols.OSPF:
                 if area not in areas_stubbed:
+                    areas_stubbed.append(area)
                     if area != 0:
-                        if area in stub_area_list:
+                        area = str(area)
+                        if area in stub_dict:
                             if node in ABR_list:
-                                if area in no_summary_areas:
-                                    config += " area %s stub no-summary\n" % (area)
-                                    areas_stubbed.append(area)
-                                else:
+                                if stub_dict[area] == cfg_file.Stub_area_enum.Stub:
                                     config += " area %s stub\n" % (area)
-                                    areas_stubbed.append(area)
+                                elif stub_dict[area] == cfg_file.Stub_area_enum.NSSA:
+                                    config += " area %s nssa\n" % (area)
+                                elif stub_dict[area] == cfg_file.Stub_area_enum.Stub_no_summary:
+                                    config += " area %s stub no-summary\n" % (area)
+                                elif stub_dict[area] == cfg_file.Stub_area_enum.NSSA_no_summary:
+                                    config += " area %s nssa no-summary\n" % (area)
+                                elif stub_dict[area] == cfg_file.Stub_area_enum.NSSA_default_information:
+                                    config += " area %s nssa default-information originate\n" % (area)
                             else:
-                                config += " area %s stub\n" % (area)
-                                areas_stubbed.append(area)
+                                if stub_dict[area] == cfg_file.Stub_area_enum.Stub or stub_dict[area] == cfg_file.Stub_area_enum.Stub_no_summary:
+                                    config += " area %s stub\n" % (area)
+                                elif stub_dict[area] == cfg_file.Stub_area_enum.NSSA or stub_dict[area] == cfg_file.Stub_area_enum.NSSA_no_summary or stub_dict[area] == cfg_file.Stub_area_enum.NSSA_default_information:
+                                    config += " area %s nssa\n" % (area)
+
+                        elif 'default' in stub_dict:
+                            if node in ABR_list:
+                                if stub_dict['default'] == cfg_file.Stub_area_enum.Stub:
+                                    config += " area %s stub\n" % (area)
+                                elif stub_dict['default'] == cfg_file.Stub_area_enum.NSSA:
+                                    config += " area %s nssa\n" % (area)
+                                elif stub_dict['default'] == cfg_file.Stub_area_enum.Stub_no_summary:
+                                    config += " area %s stub no-summary\n" % (area)
+                                elif stub_dict['default'] == cfg_file.Stub_area_enum.NSSA_no_summary:
+                                    config += " area %s nssa no-summary\n" % (area)
+                                elif stub_dict['default'] == cfg_file.Stub_area_enum.NSSA_default_information:
+                                    config += " area %s nssa default-information originate\n" % (area)
+                            else:
+                                if stub_dict['default'] == cfg_file.Stub_area_enum.Stub or stub_dict['default'] == cfg_file.Stub_area_enum.Stub_no_summary:
+                                    config += " area %s stub\n" % (area)
+                                elif stub_dict['default'] == cfg_file.Stub_area_enum.NSSA or stub_dict['default'] == cfg_file.Stub_area_enum.NSSA_no_summary or stub_dict['default'] == cfg_file.Stub_area_enum.NSSA_no_summary:
+                                    config += " area %s nssa\n" % (area)
+
                 config += " network %s %s area %s\n" % (network.network_address, network.hostmask, area)
+
+
+            # if protocol == cfg_file.Protocols.OSPF:
+            #     if area not in areas_stubbed:
+            #         if area != 0:
+            #             if area in stub_area_list:
+            #                 if node in ABR_list:
+            #                     if area in no_summary_areas:
+            #                         config += " area %s stub no-summary\n" % (area)
+            #                         areas_stubbed.append(area)
+            #                     else:
+            #                         config += " area %s stub\n" % (area)
+            #                         areas_stubbed.append(area)
+            #                 else:
+            #                     config += " area %s stub\n" % (area)
+            #                     areas_stubbed.append(area)
+            #     config += " network %s %s area %s\n" % (network.network_address, network.hostmask, area)
+
+
             if protocol == cfg_file.Protocols.RIP:
                 config += " network %s\n" % (network.network_address)
 
@@ -811,7 +858,7 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_router_config(self, node, protocol, no_summary_areas, ABR_list, stub_area_list):
+    def gen_router_config(self, node, protocol, ABR_list, stub_dict):
         """
         Get the router configs
         :param node: router
@@ -864,7 +911,7 @@ class CiscoConfigGen(object):
         config += self.gen_all_as_path_lists(node)
         config += '!\n'
         config += "!\n"
-        config += self.gen_all_igp(node, protocol, no_summary_areas, ABR_list, stub_area_list)
+        config += self.gen_all_igp(node, protocol, ABR_list, stub_dict)
         config += "!\n"
         config += self.gen_static_routes(node)
         config += "!\n"

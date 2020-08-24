@@ -70,7 +70,7 @@ class GNS3Config(object):
 class GNS3Topo(object):
     """To Generate GNS3 configs"""
 
-    def __init__(self, graph, prefix_map=None, protocol=cfg_file.Protocols.BGP, no_summary_areas = [], ABR_list = [], stub_area_list = [], gns3_config=None):
+    def __init__(self, graph, prefix_map=None, protocol=cfg_file.Protocols.BGP, ABR_list = [], stub_dict = {}, gns3_config=None):
         #protocol reflects the enum of the igp protocol
         assert isinstance(graph, NetworkGraph)
         self.prefix_map = prefix_map if prefix_map else {}
@@ -90,9 +90,10 @@ class GNS3Topo(object):
         }
         self.next_console = itertools.count(self.gns3_config.console_start_port)
         self.config_gen = CiscoConfigGen(self.graph, prefix_map=self.prefix_map)
-        self.no_summary_areas = no_summary_areas
+        # self.no_summary_areas = no_summary_areas
         self.ABR_list = ABR_list
-        self.stub_area_list = stub_area_list
+        # self.stub_area_list = stub_area_list
+        self.stub_dict = stub_dict
 
     def _annotate_node(self, node):
         """
@@ -131,9 +132,9 @@ class GNS3Topo(object):
                 topo += "\t\t%s = %s %s\n" % (siface, neighbor, diface)
         return topo
 
-    def gen_router_config(self, node, protocol, no_summary_areas, ABR_list, stub_area_list):
+    def gen_router_config(self, node, protocol, ABR_list, stub_dict):
         """Get the config for a give router"""
-        return self.config_gen.gen_router_config(node, protocol, no_summary_areas, ABR_list, stub_area_list)
+        return self.config_gen.gen_router_config(node, protocol, ABR_list, stub_dict)
 
     # def gen_router_config_rip(self, node):
     #     """Get the config for a give router"""
@@ -162,7 +163,8 @@ class GNS3Topo(object):
         configs_folder = os.path.join(out_folder, 'configs')
         os.mkdir(configs_folder)
         for node in sorted(list(self.graph.routers_iter())):
-            cfg = self.gen_router_config(node, self.protocol, self.no_summary_areas, self.ABR_list, self.stub_area_list)
+            # cfg = self.gen_router_config(node, self.protocol, self.no_summary_areas, self.ABR_list, self.stub_area_list)
+            cfg = self.gen_router_config(node, self.protocol, self.ABR_list, self.stub_dict)
             cfg_file = os.path.join(configs_folder, "%s.cfg" % node)
             with open(cfg_file, 'w') as fhandle:
                 fhandle.write(cfg)

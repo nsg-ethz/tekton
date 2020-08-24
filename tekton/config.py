@@ -23,3 +23,4 @@ default_npe = 'npe-400'
 #If tekton is not used with synet comment import out
 
 from synet.utils.common import Protocols
+from synet.utils.common import Stub_area_enum
