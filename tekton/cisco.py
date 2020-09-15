@@ -302,7 +302,7 @@ class CiscoConfigGen(object):
 
     def gen_all_offset_lists(self, node):
         """
-        Iterate over all interfaces (including loopbacks) to generate their configs
+        Iterate over all neighbors and check if cost is >1. If so create access list for the offset
         :param node: router name
         :return: string configs
         """
@@ -763,9 +763,9 @@ class CiscoConfigGen(object):
             config_net_addr += config_net_addr_tmp + ".00\n"
 
             if protocol == cfg_file.Protocols.ISIS_WIDE:
-                config_metric_style += " metric-stlye wide\n"
+                config_metric_style += " metric-style wide\n"
             if protocol == cfg_file.Protocols.ISIS_NARROW:
-                config_metric_style += " metric-stlye narrow\n"
+                config_metric_style += " metric-style narrow\n"
 
             config += config_net_addr
             config += config_passive_int
@@ -831,7 +831,7 @@ class CiscoConfigGen(object):
             config_net_addr_tmp = '.'.join(net_addr[i:i+4] for i in range(0,len(net_addr),4))
         config_net_addr += config_net_addr_tmp + ".00\n"
 
-        config_metric_style += " metric-stlye wide\n"
+        config_metric_style += " metric-style wide\n"
 
 
 
