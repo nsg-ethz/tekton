@@ -157,7 +157,7 @@ class CiscoConfigGen(object):
         if not isloop:
             config += " speed auto\n"
             config += " duplex auto\n"
-        config += "!\n"
+        # config += "!\n"
         return config
 
     def gen_iface_config_rip(self, router, iface_name, addr, description=None, isloop=False, rip_cost=None):
@@ -222,7 +222,12 @@ class CiscoConfigGen(object):
         :return: string configs
         """
         config = ''
+        area_node = self.g.nodes[node]['area']
         for neighbor in self.g.neighbors(node):
+            area_neighbor = self.g.nodes[neighbor]['area']
+            common_area = list(set(area_node).intersection(area_neighbor))
+            print(common_area)
+
             iface = self.g.get_edge_iface(node, neighbor)
             #addr = self.graph.get_edge_addr(node, neighbor)
             addr = self.g.get_iface_addr(node, iface)
@@ -245,6 +250,19 @@ class CiscoConfigGen(object):
                 else:
                     ospf_cost = None
                 config += self.gen_iface_config(node, iface, addr, protocol, desc, False, ospf_cost)
+
+                if len(common_area) == 1:
+                    config += " ip ospf 100 area " + str(common_area[0]) + "\n"
+                elif len(common_area) > 1:
+                    config += " ip ospf 100 area 0\n"
+                    for element in common_area:
+                        if element == 0:
+                            continue
+                        config += " ip ospf multi-area " + str(element) + "\n"
+                else:
+                    assert False, "no common area configured for %s and %s" %(str(node), str(neighbor))
+
+                config += "!\n"
 
         # Loop back interface
         for lo in sorted(self.g.get_loopback_interfaces(node)):
@@ -303,6 +321,7 @@ class CiscoConfigGen(object):
     def gen_all_offset_lists(self, node):
         """
         Iterate over all neighbors and check if cost is >1. If so create access list for the offset
+        and configure offsetlist to increase metric cost by edgecost - 1
         :param node: router name
         :return: string configs
         """
@@ -714,7 +733,8 @@ class CiscoConfigGen(object):
                                 elif stub_dict['default'] == cfg_file.Stub_area_enum.NSSA or stub_dict['default'] == cfg_file.Stub_area_enum.NSSA_no_summary or stub_dict['default'] == cfg_file.Stub_area_enum.NSSA_no_summary:
                                     config += " area %s nssa\n" % (area)
 
-                config += " network %s %s area %s\n" % (network.network_address, network.hostmask, area)
+                # # Replaced by configuration directly on interface
+                # config += " network %s %s area %s\n" % (network.network_address, network.hostmask, area)
 
 
             # if protocol == cfg_file.Protocols.OSPF:
