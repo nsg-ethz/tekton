@@ -92,7 +92,7 @@ class Announcement(object):
 
     def copy(self):
         comms = {}
-        for comm, fun in self.communities.iteritems():
+        for comm, fun in self.communities.items():
             comms[comm] = fun
         return Announcement(
             prefix=self.prefix, peer=self.peer, origin=self.origin,

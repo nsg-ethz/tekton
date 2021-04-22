@@ -5,6 +5,7 @@ and network specific annotations.
 """
 
 from itertools import count
+import random
 import ipaddress
 import enum
 import networkx as nx
@@ -425,6 +426,45 @@ class NetworkGraph(nx.DiGraph):
         if is_empty(attrs):
             self.node[node]['static'] = {}
         self.node[node]['static'][prefix] = next_hop
+
+    def get_acls(self, node):
+        """Return a dict of ACLs"""
+        assert self.is_router(node)
+        if 'acls' not in self.node[node]:
+            self.node[node]['acls'] = {}
+        return self.node[node]['acls']
+
+    def add_acl(self, node, interface, inout, acl_number=None):
+        """
+        add Access_List
+        :param node: Router
+        :param interface: interface name
+        :param inout: 'in' or 'out'
+        """
+        attrs = self.get_acls(node)
+        if is_empty(attrs):
+            self.node[node]['acls'] ={}
+        if interface not in self.node[node]['acls']:
+            self.node[node]['acls'][interface] = {}
+        if not acl_number:
+            if not self.node[node]['acls'][interface]:
+                acl_number = random.randint(0,20)
+            else:
+                max_num = max(self.node[node]['acls'][interface], key=self.node[node]['acls'][interface].get)
+                acl_number = max_num + 1
+        self.node[node]['acls'][interface][acl_number] = [inout]
+        return acl_number
+
+    def add_acl_entry(self, node, interface, acl_number, item):
+        """
+        Add Access_List Entry
+        """
+        if item not in self.node[node]['acls'][interface][acl_number]:
+            self.node[node]['acls'][interface][acl_number].append(item)
+
+
+    def set_acls_empty(self, node):
+        self.node[node]['acls'] = VALUENOTSET
 
     def set_static_routes_empty(self, node):
         """

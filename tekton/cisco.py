@@ -99,7 +99,7 @@ class CiscoConfigGen(object):
                 continue
             network = self.prefix_lookup(network)
             lineno = (i + 1) * 10
-            network = ip_network(unicode(network))
+            network = ip_network(str(network))
             addr = str(getattr(network, 'network_address', network))
             prefixlen = getattr(network, 'prefixlen', 32)
             config += "ip prefix-list %s seq %d %s %s/%d\n" % (name, lineno,
@@ -120,7 +120,7 @@ class CiscoConfigGen(object):
         config += "ip as-path access %s %s ^%s$\n" % (name, access, '_'.join([str(t) for t in as_path[1:]]))
         return config
 
-    def gen_iface_config(self, router, iface_name, addr, description=None, isloop=False, ospf_cost=None):
+    def gen_iface_config(self, router, iface_name, addr, description=None, isloop=False, ospf_cost=None, acl_declare=None):
         """
         Generate configuration for a given interface
         :param iface_name: the name of the interface, e.graph. Fa0/0 or lo0
@@ -133,6 +133,9 @@ class CiscoConfigGen(object):
         config = ''
         config += 'interface %s\n' % iface_name
         config += " ip address %s %s\n" % (addr.ip, addr.netmask)
+        if acl_declare:
+            for a in acl_declare:
+                config += " ip access group " + a[0] + " " + a[1] + "\n"
         if ospf_cost:
             config += " ip ospf cost %d\n" % ospf_cost
             network_type = self.g.get_ospf_interface_network_type(router, iface_name)
@@ -155,6 +158,17 @@ class CiscoConfigGen(object):
         config = ''
         for neighbor in self.g.neighbors(node):
             iface = self.g.get_edge_iface(node, neighbor)
+
+            acl_declare = None
+            acl_lists = self.g.get_acls(node)
+            if acl_lists and not is_empty(acl_lists):
+                if iface in acl_lists:
+                    acl_declare = []
+                    for acl_num in acl_lists[iface]:
+                        print("acl_num", acl_num)
+                        acl_content = acl_lists[iface][acl_num]
+                        acl_declare.append((str(acl_num), acl_content[0]))
+
             #addr = self.graph.get_edge_addr(node, neighbor)
             addr = self.g.get_iface_addr(node, iface)
             desc = self.g.get_iface_description(node, iface)
@@ -162,7 +176,7 @@ class CiscoConfigGen(object):
                 ospf_cost = self.g.get_edge_ospf_cost(node, neighbor)
             else:
                 ospf_cost = None
-            config += self.gen_iface_config(node, iface, addr, desc, False, ospf_cost)
+            config += self.gen_iface_config(node, iface, addr, desc, False, ospf_cost, acl_declare)
 
         # Loop back interface
         for lo in sorted(self.g.get_loopback_interfaces(node)):
@@ -433,7 +447,7 @@ class CiscoConfigGen(object):
         ifaces = []
         lines = []
         lineno = 5
-        for ann, attrs in self.g.get_bgp_advertise(node).iteritems():
+        for ann, attrs in self.g.get_bgp_advertise(node).items():
             iface = attrs.get('loopback')
             if not iface:
                 net = self.prefix_lookup(ann.prefix)
@@ -479,7 +493,7 @@ class CiscoConfigGen(object):
         process_id = self.g.get_ospf_process_id(node)
         config += "router ospf %d\n" % process_id
         config += " maximum-paths 32\n"
-        for network, area in self.g.get_ospf_networks(node).iteritems():
+        for network, area in self.g.get_ospf_networks(node).items():
             if network in self.g.get_loopback_interfaces(node):
                 network = self.g.get_loopback_addr(node, network).network
             elif network in self.g.get_ifaces(node):
@@ -494,7 +508,7 @@ class CiscoConfigGen(object):
         static_routes = self.g.get_static_routes(node)
         if not static_routes or is_empty(static_routes):
             return config
-        for prefix, next_hop in static_routes.iteritems():
+        for prefix, next_hop in static_routes.items():
             net = self.prefix_lookup(prefix)
             if self.g.is_router(next_hop):
                 iface = self.g.get_edge_iface(next_hop, node)
@@ -506,55 +520,76 @@ class CiscoConfigGen(object):
         config += "!\n"
         return config
 
-    def gen_router_config(self, node):
-        """
-        Get the router configs
-        :param node: router
-        :return: configs string
-        """
-        assert self.g.is_router(node)
-        #if self.g.is_peer(node):
-        self.gen_external_announcements(node)
-
-        preamble = ["version 15.2",
-                    "service timestamps debug datetime msec",
-                    "service timestamps log datetime msec",
-                    "boot-start-marker",
-                    "boot-end-marker",
-                    "no aaa new-model",
-                    "ip cef",
-                    "no ipv6 cef",
-                    "multilink bundle-name authenticated",
-                    "ip forward-protocol nd",
-                    "no ip http server",
-                    "no ip http secure-server",
-                    "ip bgp-community new-format"]
-        end = ['!', '!', 'control-plane', '!', '!', 'line con 0', ' stopbits 1',
-               'line aux 0', ' stopbits 1', 'line vty 0 4', ' login', '!', 'end']
-
+    def gen_acl(self, node):
         config = ""
-        config += "\n!\nhostname {node}\n!\n".format(node=node)
-        config += "!\n"
-        config += self.gen_all_interface_configs(node)
-        config += "!\n"
-        config += self.gen_all_communities_lists(node)
-        config += "!\n"
-        config += self.gen_all_ip_prefixes(node)
-        config += "!\n"
-        config += self.gen_all_route_maps(node)
-        config += "!\n"
-        config += self.gen_bgp_config(node)
-        config += '!\n'
-        config += '!\n'
-        config += self.gen_all_as_path_lists(node)
-        config += '!\n'
-        config += "!\n"
-        config += self.gen_all_ospf(node)
-        config += "!\n"
-        config += self.gen_static_routes(node)
-        config += "!\n"
-        config += self.gen_tracker_configs(node)
-        config += "!\n"
-        configs = "!\n" + "\n!\n".join(preamble) + config + "\n".join(end)
-        configs += "\n"
-        return configs
+        acl_lists = self.g.get_acls(node)
+        print("acl lists", acl_lists)
+        if not acl_lists or is_empty(acl_lists):
+            return config
+        for inface in acl_lists:
+            for acl_num in acl_lists[inface]:
+                acl_content = acl_lists[inface][acl_num]
+                for item in acl_content[1:]:
+                    # could be extended later for more acl formats
+                    if len(item) == 5:
+                        #item = (state, src_ip, src_mask, dst_ip, src_mask)
+                        config += "access-list " + str(acl_num) + " " + str(item[0]) + " ip " + str(item[1]) + " " + str(item[2]) \
+                                  + " " + str(item[3]) + " " + str(item[4]) + "\n"
+                config += "access-list " + str(acl_num) + " permit any\n"
+        return config
+
+
+    def gen_router_config(self, node):
+            """
+            Get the router configs
+            :param node: router
+            :return: configs string
+            """
+            assert self.g.is_router(node)
+            #if self.g.is_peer(node):
+            self.gen_external_announcements(node)
+
+            preamble = ["version 15.2",
+                        "service timestamps debug datetime msec",
+                        "service timestamps log datetime msec",
+                        "boot-start-marker",
+                        "boot-end-marker",
+                        "no aaa new-model",
+                        "ip cef",
+                        "no ipv6 cef",
+                        "multilink bundle-name authenticated",
+                        "ip forward-protocol nd",
+                        "no ip http server",
+                        "no ip http secure-server",
+                        "ip bgp-community new-format"]
+            end = ['!', '!', 'control-plane', '!', '!', 'line con 0', ' stopbits 1',
+                   'line aux 0', ' stopbits 1', 'line vty 0 4', ' login', '!', 'end']
+
+            config = ""
+            config += "\n!\nhostname {node}\n!\n".format(node=node)
+            config += "!\n"
+            config += self.gen_all_interface_configs(node)
+            config += "!\n"
+            config += self.gen_all_communities_lists(node)
+            config += "!\n"
+            config += self.gen_all_ip_prefixes(node)
+            config += "!\n"
+            config += self.gen_all_route_maps(node)
+            config += "!\n"
+            config += self.gen_bgp_config(node)
+            config += '!\n'
+            config += '!\n'
+            config += self.gen_all_as_path_lists(node)
+            config += '!\n'
+            config += "!\n"
+            config += self.gen_all_ospf(node)
+            config += "!\n"
+            config += self.gen_static_routes(node)
+            config += "!\n"
+            config += self.gen_acl(node)
+            config += "!\n"
+            config += self.gen_tracker_configs(node)
+            config += "!\n"
+            configs = "!\n" + "\n!\n".join(preamble) + config + "\n".join(end)
+            configs += "\n"
+            return configs
