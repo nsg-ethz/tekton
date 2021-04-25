@@ -58,7 +58,7 @@ def ospf_net():
     gns3 = GNS3Topo(graph)
     tmpdir = tempfile.mkdtemp(suffix='-ospf')
     gns3.write_configs(tmpdir)
-    print "Wrote configurations to %s" % tmpdir
+    print("Wrote configurations to %s" % tmpdir)
 
 
 if __name__ == '__main__':

@@ -523,7 +523,7 @@ class CiscoConfigGen(object):
     def gen_acl(self, node):
         config = ""
         acl_lists = self.g.get_acls(node)
-        print("acl lists", acl_lists)
+        # print("acl lists", acl_lists)
         if not acl_lists or is_empty(acl_lists):
             return config
         for inface in acl_lists:
